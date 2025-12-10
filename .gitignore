@@ -1,0 +1,63 @@
+# --------------------------------------------
+# Android / Jetpack Compose - Gitignore completo
+# --------------------------------------------
+
+# Build folders
+/build/
+**/build/
+out/
+
+# Local configuration files
+local.properties
+*.keystore
+*.jks
+*.pem
+
+# Gradle files
+.gradle/
+gradle-app.setting
+
+# Avoid uploading generated files
+/captures/
+/outputs/
+/generated/
+
+# IntelliJ / Android Studio
+*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/misc.xml
+.idea/vcs.xml
+.idea/libraries/
+.idea/modules.xml
+.idea/shelf/
+
+# Kotlin specific
+*.kotlin_module
+kotlin/compile/*
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# APK / AAB outputs
+*.apk
+*.aab
+
+# Cache
+.cxx/
+.externalNativeBuild/
+.fleet/
+
+# Jetpack Compose preview cache
+compose-cache/
+
+# Local test/result files
+*.tmp
+*.temp
