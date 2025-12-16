@@ -1,6 +1,7 @@
 package com.example.mappic_v3.ui.album
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import com.example.mappic_v3.data.model.Album
 import com.example.mappic_v3.ui.components.SortBar
+import com.example.mappic_v3.ui.theme.NaranjaPastel
 
 @Composable
 fun AlbumScreen(
@@ -99,10 +101,14 @@ fun AlbumCard(
                 )
             },
         border = BorderStroke(1.dp, Color.Black),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        ),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         )
-    ) {
+    )
+    {
         Column(Modifier.padding(12.dp)) {
 
             Text(

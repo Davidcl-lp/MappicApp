@@ -1,5 +1,6 @@
 package com.example.mappic_v3.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.runtime.*
 import androidx.compose.material3.Scaffold
 import com.example.mappic_v3.ui.album.AlbumScreen
@@ -11,19 +12,22 @@ import androidx.compose.foundation.layout.padding
 import com.example.mappic_v3.ui.album.AlbumViewModel
 import com.example.mappic_v3.ui.album.EditAlbumScreen
 import com.example.mappic_v3.ui.photo.AlbumPhotosScreen
-
-
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun MainScreen(
-    viewModelAlbum: AlbumViewModel = AlbumViewModel()
+    viewModelAlbum: AlbumViewModel = AlbumViewModel(),
 ) {
 
 
     var currentScreen by remember { mutableStateOf(ScreenState.LIST_ALBUMS) }
     var selectedAlbumId by remember { mutableStateOf<Int?>(null) }
 
+    fun onFinishCreate(): Unit{
+        currentScreen = ScreenState.LIST_ALBUMS
+    }
     Scaffold(
+        modifier = Modifier.background(Color.Blue),
         topBar = {
             TopBar(
                 onSelectList = { currentScreen = ScreenState.LIST_ALBUMS },
@@ -51,7 +55,7 @@ fun MainScreen(
                 onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
 
-            ScreenState.CREATE_ALBUM -> CreateAlbumScreen(modifier = modifier)
+            ScreenState.CREATE_ALBUM -> CreateAlbumScreen(modifier = modifier, viewModel = viewModelAlbum, onFinishCreate = ::onFinishCreate)
 
             ScreenState.EDIT_ALBUM -> EditAlbumScreen(
                 viewModel = viewModelAlbum,

@@ -23,8 +23,9 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun CreateAlbumScreen(
+    modifier: Modifier = Modifier,
     viewModel: AlbumViewModel = AlbumViewModel(),
-    modifier: Modifier = Modifier
+    onFinishCreate: () -> Unit
 ){
 
     var title by remember { mutableStateOf("") }
@@ -62,6 +63,7 @@ fun CreateAlbumScreen(
                     lon = "-3.70",
                     isGlobal = false
                 )
+                onFinishCreate();
             }
         ) {
             Text("Guardar álbum")
