@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.MoreVert
 fun TopBar(
     onSelectList: () -> Unit,
     onSelectCreate: () -> Unit,
+    onSelectProfile: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 

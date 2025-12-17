@@ -5,5 +5,8 @@ enum class ScreenState {
     CREATE_ALBUM,
     EDIT_ALBUM,
 
-    PHOTOS
+    PHOTOS,
+    PROFILE,
+    LOGIN,
+    REGISTER
 }

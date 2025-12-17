@@ -4,9 +4,13 @@ import com.example.mappic_v3.data.model.Album
 import com.example.mappic_v3.data.model.CreateAlbumRequest
 import com.example.mappic_v3.data.model.Photo
 import com.example.mappic_v3.data.model.UpdateAlbumRequest
+import com.example.mappic_v3.data.model.auth.AuthResponse
+import com.example.mappic_v3.data.model.auth.LoginRequest
+import com.example.mappic_v3.data.model.auth.RegisterRequest
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
+import retrofit2.Response
 
 interface ApiService {
 
@@ -35,4 +39,19 @@ interface ApiService {
     )
     @DELETE("api/photo/{id}")
     suspend fun deletePhoto(@Path("id") id: Int)
+
+    @POST("user/login")
+    suspend fun login(
+        @Body body: LoginRequest
+    ): AuthResponse
+
+    @POST("user/signup")
+    suspend fun register(
+        @Body body: RegisterRequest
+    ): AuthResponse
+
+    @DELETE("user")
+    suspend fun deleteUser(
+        @Header("Authorization") token: String
+    ): Response<Unit>
 }
