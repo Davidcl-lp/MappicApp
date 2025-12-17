@@ -1,5 +1,7 @@
 package com.example.mappic_v3.ui.auth
 
+import android.os.Build
+import androidx.annotation.RequiresExtension
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -7,15 +9,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
+@RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (Int) -> Unit,
     onRegisterClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    val userId by viewModel.userId.collectAsState()
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
@@ -59,13 +63,24 @@ fun LoginScreen(
         val errorMsg by viewModel.errorMessage.collectAsState()
 
         LaunchedEffect(isLoggedIn) {
-            if (isLoggedIn) onLoginSuccess()
+            if (isLoggedIn) {
+                userId?.let { id ->
+                    onLoginSuccess(id)
+                }
+            }
         }
 
         Button(
             onClick = {
                 viewModel.clearError()
-                viewModel.login(email, password)
+                viewModel.login(email, password) { success, message ->
+                    if (success) {
+                        val id = viewModel.userId.value
+                        if (id != null) {
+                            onLoginSuccess(id)
+                        }
+                    }
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {

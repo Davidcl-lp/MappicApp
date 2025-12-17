@@ -52,13 +52,20 @@ fun MainScreen(
 
             ScreenState.LOGIN -> LoginScreen(
                 viewModel = authViewModel,
-                onLoginSuccess = { currentScreen = ScreenState.LIST_ALBUMS }, // <--- esto faltaba
+                onLoginSuccess = { userId ->
+                    viewModelAlbum.loadAlbumsForUser(userId)
+                    currentScreen = ScreenState.LIST_ALBUMS
+                },
                 onRegisterClick = { currentScreen = ScreenState.REGISTER }
             )
 
             ScreenState.REGISTER -> RegisterScreen(
                 viewModel = authViewModel,
-                onRegisterSuccess = { currentScreen = ScreenState.LIST_ALBUMS },
+                onRegisterSuccess = { userId ->
+                    // También cargamos álbumes tras registro exitoso
+                    viewModelAlbum.loadAlbumsForUser(userId)
+                    currentScreen = ScreenState.LIST_ALBUMS
+                },
                 onBackToLogin = { currentScreen = ScreenState.LOGIN }
             )
 

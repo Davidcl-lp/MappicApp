@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel,
-    onRegisterSuccess: () -> Unit,
+    onRegisterSuccess: (Int) -> Unit,
     onBackToLogin: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
@@ -33,11 +33,14 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
 
     val isRegistered by viewModel.isRegistered.collectAsState(initial = false)
-    val errorMessage by viewModel.errorMessage.collectAsState(initial = null as String?)
+    val userId by viewModel.userId.collectAsState()
+    var localErrorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(isRegistered) {
         if (isRegistered) {
-            onRegisterSuccess()
+            userId?.let { id ->
+                onRegisterSuccess(id)
+            }
         }
     }
 
@@ -79,9 +82,9 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (errorMessage != null) {
+        if (localErrorMessage != null) {
             Text(
-                text = errorMessage!!,
+                text = localErrorMessage!!,
                 color = MaterialTheme.colorScheme.error
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -90,7 +93,14 @@ fun RegisterScreen(
         Button(
             onClick = {
                 viewModel.clearError()
-                viewModel.register(username, email, password)
+                viewModel.register(username, email, password) { success, message ->
+                    if (success) {
+                        val id = viewModel.userId.value
+                        if (id != null) {
+                            onRegisterSuccess(id)
+                        }
+                    }
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {

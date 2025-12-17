@@ -17,20 +17,22 @@ class AlbumViewModel : ViewModel() {
 
     private val _albums = MutableStateFlow<List<Album>>(emptyList())
     val albums: StateFlow<List<Album>> = _albums
-
+    private var currentUserId: Int? = null
     private val _editingAlbum = MutableStateFlow<Album?>(null)
     val editingAlbum: StateFlow<Album?> = _editingAlbum
 
-    init {
-        loadAlbums()
+    init {}
+
+    fun loadAlbumsForUser(userId: Int) {
+        currentUserId = userId
+        viewModelScope.launch {
+            val result = repo.getUserAlbums(userId)
+            _albums.value = result
+        }
     }
 
-    fun loadAlbums() {
-        viewModelScope.launch {
-            val result = repo.getUserAlbums(1)
-            _albums.value = result
-
-        }
+    private fun reload() {
+        currentUserId?.let { loadAlbumsForUser(it) }
     }
 
     fun createAlbum(
@@ -53,14 +55,14 @@ class AlbumViewModel : ViewModel() {
                     is_global = isGlobal
                 )
             )
-            loadAlbums()
+            reload()
         }
     }
 
     fun deleteAlbum(id: Int) {
         viewModelScope.launch {
             repo.deleteAlbum(id)
-            loadAlbums()
+            reload()
         }
     }
 
@@ -78,7 +80,7 @@ class AlbumViewModel : ViewModel() {
                 )
             )
             _editingAlbum.value = null
-            loadAlbums()
+            reload()
         }
     }
     fun sortAlbums(field: SortField, order: SortOrder) {

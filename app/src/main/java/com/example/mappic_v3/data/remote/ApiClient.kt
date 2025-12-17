@@ -30,6 +30,4 @@ object ApiClient {
             .build()
             .create(AuthApiService::class.java)
     }
-
-
 }

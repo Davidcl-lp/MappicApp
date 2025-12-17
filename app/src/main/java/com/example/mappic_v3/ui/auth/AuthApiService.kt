@@ -11,7 +11,7 @@ interface AuthApiService {
     @POST("api/user/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
 
-    @DELETE("user")
+    @DELETE("api/user")
     suspend fun deleteCurrentUser(
         @Header("Authorization") token: String
     ): AuthResponse
