@@ -37,13 +37,27 @@ fun AlbumPhotosScreen(
     onBack: () -> Unit
 ) {
     BackHandler { onBack() }
+
     val context = LocalContext.current
     val viewModel = remember { PhotoViewModel(albumId) }
+
     val photos by viewModel.photos.collectAsState()
+    val isUploading by viewModel.isUploading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
     var selectionMode by remember { mutableStateOf(false) }
     var selectedPhotos by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var viewerOpen by remember { mutableStateOf(false) }
     var startIndex by remember { mutableStateOf(0) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearError()
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
@@ -58,168 +72,177 @@ fun AlbumPhotosScreen(
         }
     }
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
 
-
-        Text(albumTitle, style = MaterialTheme.typography.headlineLarge)
-
-        if (albumDescription.isNotEmpty()) {
-            Text(
-                text = albumDescription,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-
-            Button(
-                onClick = { imagePickerLauncher.launch("image/*") },
-                shape = RoundedCornerShape(12.dp)
+        Box(Modifier.fillMaxSize()) {
+            Column(
+                modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .padding(16.dp)
             ) {
-                Icon(Icons.Default.CloudUpload, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Subir fotos")
-            }
 
-            if (selectionMode) {
-                OutlinedButton(
-                    onClick = {
-                        selectedPhotos =
-                            if (selectedPhotos.size == photos.size)
-                                emptySet()
-                            else
-                                photos.map { it.id }.toSet()
-                        if (selectedPhotos.isEmpty()) {
-                            selectionMode = false
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
+                Text(albumTitle, style = MaterialTheme.typography.headlineLarge)
+
+                if (albumDescription.isNotEmpty()) {
                     Text(
-                        if (selectedPhotos.size == photos.size)
-                            "Deseleccionar todo"
-                        else
-                            "Seleccionar todo"
+                        text = albumDescription,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
-            }
-        }
 
-        Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(12.dp))
 
-        if (selectionMode) {
-            Button(
-                onClick = {
-                    viewModel.deletePhotos(selectedPhotos.toList())
-                    selectedPhotos = emptySet()
-                    selectionMode = false
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Eliminar (${selectedPhotos.size})")
-            }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
-            Spacer(Modifier.height(12.dp))
-        }
+                    Button(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.CloudUpload, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Subir fotos")
+                    }
 
-        if (photos.isEmpty()) {
-            Text(
-                "No hay fotos en este álbum",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            return
-        }
+                    if (selectionMode) {
+                        OutlinedButton(
+                            onClick = {
+                                selectedPhotos =
+                                    if (selectedPhotos.size == photos.size)
+                                        emptySet()
+                                    else
+                                        photos.map { it.id }.toSet()
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            contentPadding = PaddingValues(6.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(
-                items = photos,
-                key = { it.id }
-            ) { photo ->
-
-                val isSelected = photo.id in selectedPhotos
-
-                Card(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .pointerInput(selectionMode, selectedPhotos) {
-                            detectTapGestures(
-                                onLongPress = {
-                                    selectionMode = true
-                                    selectedPhotos = setOf(photo.id)
-                                },
-                                onTap = {
-                                    if (selectionMode) {
-                                        selectedPhotos =
-                                            if (photo.id in selectedPhotos)
-                                                selectedPhotos - photo.id
-                                            else
-                                                selectedPhotos + photo.id
-
-                                        if (selectedPhotos.isEmpty()) {
-                                            selectionMode = false
-                                        }
-                                    } else {
-                                        viewerOpen = true
-                                        startIndex = photos.indexOf(photo)
-                                    }
+                                if (selectedPhotos.isEmpty()) {
+                                    selectionMode = false
                                 }
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                if (selectedPhotos.size == photos.size)
+                                    "Deseleccionar todo"
+                                else
+                                    "Seleccionar todo"
                             )
-                        },
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Box {
-
-                        AsyncImage(
-                            model = photo.url,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                        if (photo.id in selectedPhotos) {
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
                         }
                     }
                 }
 
+                Spacer(Modifier.height(12.dp))
+
+                if (selectionMode) {
+                    Button(
+                        onClick = {
+                            viewModel.deletePhotos(selectedPhotos.toList())
+                            selectedPhotos = emptySet()
+                            selectionMode = false
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Eliminar (${selectedPhotos.size})")
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                }
+
+                if (photos.isEmpty()) {
+                    Text(
+                        "No hay fotos en este álbum",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    return@Column
+                }
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    contentPadding = PaddingValues(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(photos, key = { it.id }) { photo ->
+
+                        val isSelected = photo.id in selectedPhotos
+
+                        Card(
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .pointerInput(selectionMode, selectedPhotos) {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            selectionMode = true
+                                            selectedPhotos = setOf(photo.id)
+                                        },
+                                        onTap = {
+                                            if (selectionMode) {
+                                                selectedPhotos =
+                                                    if (isSelected)
+                                                        selectedPhotos - photo.id
+                                                    else
+                                                        selectedPhotos + photo.id
+
+                                                if (selectedPhotos.isEmpty()) {
+                                                    selectionMode = false
+                                                }
+                                            } else {
+                                                viewerOpen = true
+                                                startIndex = photos.indexOf(photo)
+                                            }
+                                        }
+                                    )
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(6.dp)
+                        ) {
+                            Box {
+                                AsyncImage(
+                                    model = photo.url,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+
+                                if (isSelected) {
+                                    Box(
+                                        Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (isUploading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.45f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color.White)
+                }
             }
         }
     }
-
 
     if (viewerOpen) {
         PhotoViewer(
@@ -229,6 +252,7 @@ fun AlbumPhotosScreen(
         )
     }
 }
+
 @Composable
 fun PhotoViewer(
     photos: List<Photo>,

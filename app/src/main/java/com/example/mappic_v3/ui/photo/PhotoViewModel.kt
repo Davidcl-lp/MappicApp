@@ -21,6 +21,9 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
     private val _isUploading = MutableStateFlow(false)
     val isUploading: StateFlow<Boolean> = _isUploading
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
@@ -30,11 +33,14 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
 
     private fun loadPhotos() {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
-                val result = repo.getPhotos(albumId)
-                _photos.value = result
+                _photos.value = repo.getPhotos(albumId)
             } catch (e: Exception) {
-                Log.e("PhotoViewModel", "Error: ${e.message}")
+                Log.e("PhotoViewModel", e.message ?: "")
+                _errorMessage.value = "Error al cargar fotos"
+            } finally {
+                _isLoading.value = false
             }
         }
     }
@@ -45,28 +51,19 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
         uploaderId: Int,
         description: String?
     ) {
-        if (uploaderId <= 0) {
-            _errorMessage.value = "ID de usuario no válido"
-            return
-        }
-
         viewModelScope.launch {
             _isUploading.value = true
             _errorMessage.value = null
             try {
                 val success = repo.uploadPhotos(
-                    context = context,
-                    uris = uris,
-                    albumId = albumId,
-                    uploaderId = uploaderId,
-                    description = description
+                    context,
+                    uris,
+                    albumId,
+                    uploaderId,
+                    description
                 )
-
-                if (success) {
-                    loadPhotos()
-                } else {
-                    _errorMessage.value = "Error al subir fotos"
-                }
+                if (success) loadPhotos()
+                else _errorMessage.value = "Error al subir fotos"
             } catch (e: Exception) {
                 _errorMessage.value = "Error de conexión"
             } finally {
@@ -81,7 +78,7 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
                 photoIds.forEach { repo.deletePhoto(it) }
                 loadPhotos()
             } catch (e: Exception) {
-                _errorMessage.value = "Error al eliminar"
+                _errorMessage.value = "Error al eliminar fotos"
             }
         }
     }
