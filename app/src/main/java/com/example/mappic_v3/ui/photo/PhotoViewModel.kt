@@ -28,13 +28,17 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
         loadPhotos()
     }
 
-    private fun loadPhotos() {
+    fun loadPhotos() {
         viewModelScope.launch {
             try {
+                // Limpiamos la lista actual para forzar a Compose a redibujar
+                _photos.value = emptyList()
+
+                // Traemos las fotos nuevas del servidor
                 val result = repo.getPhotos(albumId)
                 _photos.value = result
             } catch (e: Exception) {
-                Log.e("PhotoViewModel", "Error: ${e.message}")
+                _errorMessage.value = "Error al recargar fotos"
             }
         }
     }
@@ -53,17 +57,18 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
         viewModelScope.launch {
             _isUploading.value = true
             _errorMessage.value = null
+
             try {
-                val success = repo.uploadPhotos(
-                    context = context,
-                    uris = uris,
-                    albumId = albumId,
-                    uploaderId = uploaderId,
-                    description = description
+                val newPhotos = repo.uploadPhotos(
+                    context,
+                    uris,
+                    albumId,
+                    uploaderId,
+                    description
                 )
 
-                if (success) {
-                    loadPhotos()
+                if (newPhotos != null) {
+                    _photos.value = _photos.value + newPhotos
                 } else {
                     _errorMessage.value = "Error al subir fotos"
                 }
@@ -74,6 +79,7 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
             }
         }
     }
+
 
     fun deletePhotos(photoIds: List<Int>) {
         viewModelScope.launch {

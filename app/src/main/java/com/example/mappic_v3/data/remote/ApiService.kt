@@ -10,8 +10,10 @@ import com.example.mappic_v3.data.model.auth.AuthResponse
 import com.example.mappic_v3.data.model.auth.LoginRequest
 import com.example.mappic_v3.data.model.auth.RegisterRequest
 import com.example.mappic_v3.data.model.auth.User
+import com.google.firebase.appdistribution.gradle.models.UploadResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.http.*
 import retrofit2.Response
 
@@ -38,8 +40,10 @@ interface ApiService {
         @Part images: List<MultipartBody.Part>,
         @Part("album_id") albumId: RequestBody,
         @Part("uploader_id") uploaderId: RequestBody,
-        @Part("description") description: RequestBody?
-    )
+        @Part("description") description: RequestBody
+    ): Response<List<Photo>>
+
+
     @DELETE("api/photo/{id}")
     suspend fun deletePhoto(@Path("id") id: Int)
 
@@ -59,8 +63,9 @@ interface ApiService {
     ): Response<Unit>
 
     @POST("api/album/member")
-    suspend fun addAlbumMember(@Body request: AddMemberRequest): AlbumMemberResponse
-
+    suspend fun addAlbumMember(
+        @Body request: AddMemberRequest
+    ): User
     @GET("api/user/email/{email}")
     suspend fun searchUserByEmail(@Path("email") email: String): User?
 
@@ -72,7 +77,7 @@ interface ApiService {
 
     @HTTP(method = "DELETE", path = "api/album/member/{id}", hasBody = true)
     suspend fun deleteAlbumMember(
-        @Path("id") albumId: Int,
-        @Body body: Map<String, Int>
-    ): Any
+        @Query("albumId") albumId: Int,
+        @Query("userId") userId: Int
+    ): Response<ResponseBody>
 }

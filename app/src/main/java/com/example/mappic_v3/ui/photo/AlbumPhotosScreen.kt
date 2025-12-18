@@ -1,4 +1,5 @@
 package com.example.mappic_v3.ui.photo
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,6 +12,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.*
@@ -29,11 +31,13 @@ import com.example.mappic_v3.data.model.Photo
 
 @Composable
 fun AlbumPhotosScreen(
-    modifier: Modifier,
+    userRole: String,
     albumId: Int,
     albumTitle: String,
     albumDescription: String,
     uploaderId: Int,
+    albumOwnerId: Int,
+    modifier: Modifier,
     onBack: () -> Unit
 ) {
     BackHandler { onBack() }
@@ -44,11 +48,26 @@ fun AlbumPhotosScreen(
     var selectedPhotos by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var viewerOpen by remember { mutableStateOf(false) }
     var startIndex by remember { mutableStateOf(0) }
+    val isOwner = uploaderId == albumOwnerId
+    val canUpload = userRole == "owner" || userRole == "editor" || isOwner
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
+            // Persistir permisos (Truco para evitar crash en versiones nuevas de Android)
+            uris.forEach { uri ->
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: Exception) {
+                    // A veces falla en algunas versiones, no pasa nada, continuamos
+                }
+            }
+
+            // Llamar al ViewModel
             viewModel.uploadPhotos(
                 context = context,
                 uris = uris,
@@ -81,13 +100,16 @@ fun AlbumPhotosScreen(
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
-            Button(
-                onClick = { imagePickerLauncher.launch("image/*") },
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.CloudUpload, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Subir fotos")
+            if (userRole == "owner" || userRole == "editor" || uploaderId == albumOwnerId) {
+                Button(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Text("Añadir Fotos")
+                }
+            } else {
+                Text("Modo lectura", style = MaterialTheme.typography.bodySmall)
             }
 
             if (selectionMode) {

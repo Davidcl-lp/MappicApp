@@ -42,7 +42,20 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3" // necesario para Compose Material3
+        kotlinCompilerExtensionVersion = "1.5.3"
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/io.netty.versions.properties"
+
+            excludes += "/META-INF/DEPENDENCIES"
+            excludes += "/META-INF/LICENSE"
+            excludes += "/META-INF/LICENSE.txt"
+            excludes += "/META-INF/NOTICE"
+            excludes += "/META-INF/NOTICE.txt"
+        }
     }
 }
 
@@ -76,6 +89,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation(libs.firebase.appdistribution.gradle)
 
     // Tests
     testImplementation(libs.junit)
@@ -85,4 +99,16 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.3")
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.3")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.3")
+}
+
+configurations.all {
+    resolutionStrategy {
+        // Forzamos versiones específicas para evitar que cada librería traiga la suya
+        force("com.google.protobuf:protobuf-javalite:3.25.5")
+        force("com.google.api.grpc:proto-google-common-protos:2.48.0")
+    }
+
+    // Eliminamos los módulos que causan el "choque" directo
+    exclude(group = "com.google.api.grpc", module = "proto-google-common-protos")
+    exclude(group = "com.google.protobuf", module = "protobuf-java")
 }

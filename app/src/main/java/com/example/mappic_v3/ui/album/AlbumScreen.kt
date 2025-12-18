@@ -27,7 +27,7 @@ fun AlbumScreen(
     viewModel: AlbumViewModel,
     modifier: Modifier = Modifier,
     onEdit: () -> Unit,
-    onOpenPhotos: (Int, String, String?) -> Unit,
+    onOpenPhotos: (Int, String, String, String?, Int) -> Unit,
     onManageMembers: (Int) -> Unit
 ) {
     val albums by viewModel.albums.collectAsState()
@@ -79,7 +79,7 @@ fun AlbumScreen(
                     AlbumCard(
                         album = album,
                         onClick = {
-                            onOpenPhotos(album.id, album.title, album.description)
+                            onOpenPhotos(album.id, album.title, album.description ?: "", album.role, album.owner_id)
                         },
                         onLongPress = { offset ->
                             selectedAlbum = album

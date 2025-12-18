@@ -8,6 +8,7 @@ data class Album(
     val title: String,
     val description: String? = null,
     val owner_id: Int,
+    val role: String? = "viewer",
     val created_at: String,
     val updated_at: String,
     val location_name: String? = null,

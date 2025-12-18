@@ -1,5 +1,6 @@
 package com.example.mappic_v3.data.repository
 
+import android.util.Log
 import com.example.mappic_v3.data.model.*
 import com.example.mappic_v3.data.model.auth.User
 import com.example.mappic_v3.data.remote.ApiClient
@@ -11,8 +12,17 @@ class AlbumRepository {
     suspend fun getUserAlbums(userId: Int): List<Album> =
         safeCall { ApiClient.apiService.getUserAlbums(userId) } ?: emptyList()
 
-    suspend fun addMemberToAlbum(request: AddMemberRequest): Boolean =
-        safeCall { ApiClient.apiService.addAlbumMember(request) } != null
+    suspend fun addMemberToAlbum(request: AddMemberRequest): User? {
+        return try {
+            val user = ApiClient.apiService.addAlbumMember(request)
+            Log.d("ADD_MEMBER", "Usuario recibido: $user")
+            user
+        } catch (e: Exception) {
+            Log.e("ADD_MEMBER", "Error al parsear usuario", e)
+            null
+        }
+    }
+
 
     suspend fun createAlbum(body: CreateAlbumRequest): Album? =
         safeCall { ApiClient.apiService.createAlbum(body) }
@@ -31,11 +41,9 @@ class AlbumRepository {
 
     suspend fun removeMember(albumId: Int, userId: Int): Boolean {
         return try {
-            val body = mapOf("userId" to userId)
-            ApiClient.apiService.deleteAlbumMember(albumId, body)
-            true
+            val response = ApiClient.apiService.deleteAlbumMember(albumId, userId)
+            response.isSuccessful
         } catch (e: Exception) {
-            e.printStackTrace()
             false
         }
     }

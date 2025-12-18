@@ -28,6 +28,8 @@ fun MainScreen(
     val context = LocalContext.current
     val authViewModel = remember { AuthViewModel(context) }
     var currentUserId by remember { mutableStateOf<Int?>(null) }
+    var currentUserRole by remember { mutableStateOf("viewer") }
+    var selectedAlbumOwnerId by remember { mutableStateOf<Int?>(null) }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -69,10 +71,12 @@ fun MainScreen(
                 viewModel = viewModelAlbum,
                 modifier = modifier,
                 onEdit = { currentScreen = ScreenState.EDIT_ALBUM },
-                onOpenPhotos = { id, title, description ->
+                onOpenPhotos = { id, title, description, role, ownerId ->
                     selectedAlbumId = id
                     selectedAlbumTitle = title
                     selectedAlbumDescription = description
+                    selectedAlbumOwnerId = ownerId
+                    currentUserRole = if (currentUserId == ownerId) "owner" else (role ?: "viewer")
                     currentScreen = ScreenState.PHOTOS
                 },
                 onManageMembers = { albumId ->
@@ -82,11 +86,13 @@ fun MainScreen(
             )
 
             ScreenState.PHOTOS -> AlbumPhotosScreen(
+                userRole = currentUserRole,
                 modifier = modifier,
                 albumId = selectedAlbumId ?: 0,
                 albumTitle = selectedAlbumTitle ?: "",
                 albumDescription = selectedAlbumDescription ?: "",
                 uploaderId = currentUserId ?: 0,
+                albumOwnerId = selectedAlbumOwnerId ?: 0,
                 onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
 

@@ -7,5 +7,6 @@ data class User(
     val id: Int,
     val name: String,
     val email: String,
+    val role: String? = null,
     val profile_picture_url: String? = null
 )

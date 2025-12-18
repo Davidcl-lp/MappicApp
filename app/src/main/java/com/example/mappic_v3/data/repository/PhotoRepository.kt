@@ -7,8 +7,12 @@ import com.example.mappic_v3.data.remote.ApiClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+import java.io.InputStream
 
 class PhotoRepository {
 
@@ -21,39 +25,42 @@ class PhotoRepository {
         albumId: Int,
         uploaderId: Int,
         description: String?
-    ): Boolean {
-        return withContext(Dispatchers.IO) {
-            try {
-                val contentResolver = context.contentResolver
+    ): List<Photo>? {
+        return try {
+            val parts = uris.mapNotNull { uri ->
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val bytes = inputStream?.readBytes() ?: return@mapNotNull null
+                val requestFile = bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
 
-                val imageParts = uris.map { uri ->
-                    val inputStream = contentResolver.openInputStream(uri)!!
-                    val bytes = inputStream.readBytes()
-                    inputStream.close()
-
-                    val requestBody = bytes.toRequestBody("image/*".toMediaType())
-
-                    MultipartBody.Part.createFormData(
-                        name = "images",
-                        filename = "photo_${System.currentTimeMillis()}.jpg",
-                        body = requestBody
-                    )
-                }
-
-                ApiClient.apiService.uploadPhotos(
-                    images = imageParts,
-                    albumId = albumId.toString().toRequestBody("text/plain".toMediaType()),
-                    uploaderId = uploaderId.toString().toRequestBody("text/plain".toMediaType()),
-                    description = description?.toRequestBody("text/plain".toMediaType())
+                MultipartBody.Part.createFormData(
+                    "images",
+                    "photo_${System.currentTimeMillis()}.jpg",
+                    requestFile
                 )
-
-                true
-            } catch (e: Exception) {
-                e.printStackTrace()
-                false
             }
+
+            val albumIdBody = albumId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+            val uploaderIdBody = uploaderId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+            val descBody = (description ?: "").toRequestBody("text/plain".toMediaTypeOrNull())
+
+            val response = ApiClient.apiService.uploadPhotos(
+                parts,
+                albumIdBody,
+                uploaderIdBody,
+                descBody
+            )
+
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
+
 
     suspend fun deletePhoto(photoId: Int): Boolean =
         safeCall { ApiClient.apiService.deletePhoto(photoId) } != null
