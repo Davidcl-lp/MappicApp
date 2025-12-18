@@ -66,7 +66,6 @@ fun AlbumPhotosScreen(
                 }
             }
 
-            // Llamar al ViewModel
             viewModel.uploadPhotos(
                 context = context,
                 uris = uris,
