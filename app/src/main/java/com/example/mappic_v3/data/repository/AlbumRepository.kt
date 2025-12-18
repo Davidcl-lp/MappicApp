@@ -10,6 +10,9 @@ class AlbumRepository {
     suspend fun getUserAlbums(userId: Int): List<Album> =
         safeCall { ApiClient.apiService.getUserAlbums(userId) } ?: emptyList()
 
+    suspend fun addMemberToAlbum(request: AddMemberRequest): Boolean =
+        safeCall { ApiClient.apiService.addAlbumMember(request) } != null
+
     suspend fun createAlbum(body: CreateAlbumRequest): Album? =
         safeCall { ApiClient.apiService.createAlbum(body) }
 

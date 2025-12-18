@@ -1,7 +1,5 @@
 package com.example.mappic_v3.data.model
 
-
-
 import kotlinx.serialization.Serializable
 
 @Serializable

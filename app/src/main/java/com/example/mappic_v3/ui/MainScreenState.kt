@@ -7,5 +7,6 @@ enum class ScreenState {
     PHOTOS,
     PROFILE,
     LOGIN,
-    REGISTER
+    REGISTER,
+    MEMBER_ADD
 }

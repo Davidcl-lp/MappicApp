@@ -1,5 +1,7 @@
 package com.example.mappic_v3.ui
 
+import android.os.Build
+import androidx.annotation.RequiresExtension
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +16,7 @@ import com.example.mappic_v3.ui.photo.AlbumPhotosScreen
 import kotlinx.coroutines.launch
 
 
+@RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
 @Composable
 fun MainScreen(
     viewModelAlbum: AlbumViewModel = AlbumViewModel()
@@ -64,14 +67,17 @@ fun MainScreen(
                 viewModel = viewModelAlbum,
                 modifier = modifier,
                 onEdit = { currentScreen = ScreenState.EDIT_ALBUM },
-                onOpenPhotos = { albumId, albumTitle, albumDescription ->
-                    selectedAlbumId = albumId
-                    selectedAlbumTitle = albumTitle
-                    selectedAlbumDescription = albumDescription
+                onOpenPhotos = { id, title, description ->
+                    selectedAlbumId = id
+                    selectedAlbumTitle = title
+                    selectedAlbumDescription = description
                     currentScreen = ScreenState.PHOTOS
+                },
+                onManageMembers = { albumId ->
+                    selectedAlbumId = albumId
+                    currentScreen = ScreenState.MEMBER_ADD
                 }
             )
-
 
             ScreenState.PHOTOS -> AlbumPhotosScreen(
                 modifier = modifier,
@@ -98,6 +104,19 @@ fun MainScreen(
                 authViewModel = authViewModel,
                 onLogout = { currentScreen = ScreenState.LOGIN }
             )
+            ScreenState.MEMBER_ADD -> {
+                val albumId = selectedAlbumId // Usamos el ID guardado
+                if (albumId != null) {
+                    AddMemberScreen(
+                        albumId = albumId,
+                        viewModel = viewModelAlbum,
+                        onBack = { currentScreen = ScreenState.LIST_ALBUMS } // Volver
+                    )
+                } else {
+                    // Manejar error si no hay ID
+                    currentScreen = ScreenState.LIST_ALBUMS
+                }
+            }
         }
     }
 }

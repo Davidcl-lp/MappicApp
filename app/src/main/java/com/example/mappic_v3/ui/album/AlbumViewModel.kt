@@ -2,10 +2,13 @@ package com.example.mappic_v3.ui.album
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mappic_v3.data.model.AddMemberRequest
 import com.example.mappic_v3.data.model.Album
 import com.example.mappic_v3.data.model.CreateAlbumRequest
 import com.example.mappic_v3.data.model.UpdateAlbumRequest
+import com.example.mappic_v3.data.model.auth.User
 import com.example.mappic_v3.data.repository.AlbumRepository
+import com.example.mappic_v3.data.repository.UserRepository
 import com.example.mappic_v3.ui.SortField
 import com.example.mappic_v3.ui.SortOrder
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,13 +17,20 @@ import kotlinx.coroutines.launch
 class AlbumViewModel : ViewModel() {
 
     private val repo = AlbumRepository()
+
     private val _albums = MutableStateFlow<List<Album>>(emptyList())
     val albums: StateFlow<List<Album>> = _albums
     private var currentUserId: Int? = null
     private val _editingAlbum = MutableStateFlow<Album?>(null)
     val editingAlbum: StateFlow<Album?> = _editingAlbum
+    private val _foundUser = MutableStateFlow<User?>(null)
+    val foundUser: StateFlow<User?> = _foundUser
 
+    private val _memberMessage = MutableStateFlow<String?>(null)
+    val memberMessage: StateFlow<String?> = _memberMessage
     init {}
+
+    private val userRepo = UserRepository()
 
     fun loadAlbumsForUser(userId: Int) {
         currentUserId = userId
@@ -28,6 +38,45 @@ class AlbumViewModel : ViewModel() {
             val result = repo.getUserAlbums(userId)
             _albums.value = result
         }
+    }
+
+    fun addMember(albumId: Int, newUserId: Int, role: String) {
+        viewModelScope.launch {
+            _memberMessage.value = "Añadiendo..."
+
+            val success = repo.addMemberToAlbum(
+                AddMemberRequest(
+                    album_id = albumId,
+                    user_id = newUserId,
+                    role = role
+                )
+            )
+            if (success) {
+                _foundUser.value = null
+                _memberMessage.value = "¡Usuario añadido correctamente como $role!"
+            } else {
+                _memberMessage.value = "Error: No se pudo añadir al usuario. Quizás ya es miembro."
+            }
+        }
+    }
+
+    fun searchUserByEmail(email: String) {
+        _foundUser.value = null
+        _memberMessage.value = null
+        viewModelScope.launch {
+            val user = userRepo.findUserByEmail(email)
+            if (user != null) {
+                _foundUser.value = user
+                _memberMessage.value = "User found: ${user.name}"
+            } else {
+                _memberMessage.value = "Error: User not found with that email."
+            }
+        }
+    }
+
+    fun clearMemberStatus() {
+        _memberMessage.value = null
+        _foundUser.value = null
     }
 
     private fun reload() {
@@ -42,12 +91,17 @@ class AlbumViewModel : ViewModel() {
         lon: String?,
         isGlobal: Boolean
     ) {
+        val ownerId = currentUserId ?: run {
+            println("ERROR: No hay usuario logueado para crear el álbum.")
+            return
+        }
+
         viewModelScope.launch {
             repo.createAlbum(
                 CreateAlbumRequest(
                     title = title,
                     description = description,
-                    owner_id = 5,
+                    owner_id = ownerId,
                     location_name = location,
                     latitude = lat,
                     longitude = lon,

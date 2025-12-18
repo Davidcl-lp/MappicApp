@@ -1,12 +1,15 @@
 package com.example.mappic_v3.data.remote
 
+import com.example.mappic_v3.data.model.AddMemberRequest
 import com.example.mappic_v3.data.model.Album
 import com.example.mappic_v3.data.model.CreateAlbumRequest
 import com.example.mappic_v3.data.model.Photo
 import com.example.mappic_v3.data.model.UpdateAlbumRequest
+import com.example.mappic_v3.data.model.auth.AlbumMemberResponse
 import com.example.mappic_v3.data.model.auth.AuthResponse
 import com.example.mappic_v3.data.model.auth.LoginRequest
 import com.example.mappic_v3.data.model.auth.RegisterRequest
+import com.example.mappic_v3.data.model.auth.User
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
@@ -54,4 +57,10 @@ interface ApiService {
     suspend fun deleteUser(
         @Header("Authorization") token: String
     ): Response<Unit>
+
+    @POST("api/album/member")
+    suspend fun addAlbumMember(@Body request: AddMemberRequest): AlbumMemberResponse
+
+    @GET("api/user/email/{email}")
+    suspend fun searchUserByEmail(@Path("email") email: String): User?
 }
