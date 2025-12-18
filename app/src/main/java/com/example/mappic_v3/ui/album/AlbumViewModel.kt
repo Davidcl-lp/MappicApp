@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 class AlbumViewModel : ViewModel() {
 
     private val repo = AlbumRepository()
-
     private val _albums = MutableStateFlow<List<Album>>(emptyList())
     val albums: StateFlow<List<Album>> = _albums
     private var currentUserId: Int? = null
@@ -48,7 +47,7 @@ class AlbumViewModel : ViewModel() {
                 CreateAlbumRequest(
                     title = title,
                     description = description,
-                    owner_id = 1,
+                    owner_id = 5,
                     location_name = location,
                     latitude = lat,
                     longitude = lon,

@@ -1,39 +1,29 @@
 package com.example.mappic_v3.ui.album
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.OutlinedTextField
-
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 
 @Composable
 fun CreateAlbumScreen(
     modifier: Modifier = Modifier,
     viewModel: AlbumViewModel = AlbumViewModel(),
     onFinishCreate: () -> Unit
-){
-
+) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    Column(
+        modifier = modifier.padding(20.dp)
+    ) {
 
-    Column(modifier.padding(20.dp)) {
-
-        Text("Crear álbum", fontSize = 22.sp)
+        Text(
+            text = "Crear álbum",
+            fontSize = 22.sp
+        )
 
         Spacer(Modifier.height(16.dp))
 
@@ -41,8 +31,11 @@ fun CreateAlbumScreen(
             value = title,
             onValueChange = { title = it },
             label = { Text("Título") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
+
+        Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
             value = description,
@@ -51,20 +44,32 @@ fun CreateAlbumScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = location,
+            onValueChange = { location = it },
+            label = { Text("Ubicación") },
+            placeholder = { Text("Ej: Madrid, España") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(Modifier.height(24.dp))
 
         Button(
             onClick = {
                 viewModel.createAlbum(
                     title = title,
                     description = description,
-                    location = "Madrid",
-                    lat = "40.41",
-                    lon = "-3.70",
+                    location = location.ifBlank { null },
+                    lat = "0",
+                    lon = "0",
                     isGlobal = false
                 )
-                onFinishCreate();
-            }
+                onFinishCreate()
+            },
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Guardar álbum")
         }

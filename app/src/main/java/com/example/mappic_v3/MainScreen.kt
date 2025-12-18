@@ -1,18 +1,16 @@
 package com.example.mappic_v3.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.example.mappic_v3.ui.album.*
 import com.example.mappic_v3.ui.auth.*
-import com.example.mappic_v3.ui.photo.AlbumPhotosScreen
 import com.example.mappic_v3.ui.components.TopBar
+import com.example.mappic_v3.ui.photo.AlbumPhotosScreen
 import kotlinx.coroutines.launch
 
 
@@ -20,23 +18,17 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     viewModelAlbum: AlbumViewModel = AlbumViewModel()
 ) {
-
     var currentScreen by remember { mutableStateOf(ScreenState.LOGIN) }
     var selectedAlbumId by remember { mutableStateOf<Int?>(null) }
+    var selectedAlbumTitle by remember { mutableStateOf<String?>(null) }
+    var selectedAlbumDescription by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val authViewModel = remember { AuthViewModel(context) }
 
     Scaffold(
-        modifier = Modifier.background(Color(0xFFEFEFEF)),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            if (currentScreen in listOf(
-                    ScreenState.LIST_ALBUMS,
-                    ScreenState.CREATE_ALBUM,
-                    ScreenState.EDIT_ALBUM,
-                    ScreenState.PHOTOS,
-                    ScreenState.PROFILE
-                )
-            ) {
+            if (currentScreen !in listOf(ScreenState.LOGIN, ScreenState.REGISTER)) {
                 TopBar(
                     onSelectList = { currentScreen = ScreenState.LIST_ALBUMS },
                     onSelectCreate = { currentScreen = ScreenState.CREATE_ALBUM },
@@ -46,10 +38,11 @@ fun MainScreen(
         }
     ) { padding ->
 
-        val modifier = Modifier.padding(padding)
+        val modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()
 
         when (currentScreen) {
-
             ScreenState.LOGIN -> LoginScreen(
                 viewModel = authViewModel,
                 onLoginSuccess = { userId ->
@@ -62,26 +55,29 @@ fun MainScreen(
             ScreenState.REGISTER -> RegisterScreen(
                 viewModel = authViewModel,
                 onRegisterSuccess = { userId ->
-                    // También cargamos álbumes tras registro exitoso
                     viewModelAlbum.loadAlbumsForUser(userId)
                     currentScreen = ScreenState.LIST_ALBUMS
                 },
                 onBackToLogin = { currentScreen = ScreenState.LOGIN }
             )
-
             ScreenState.LIST_ALBUMS -> AlbumScreen(
                 viewModel = viewModelAlbum,
                 modifier = modifier,
                 onEdit = { currentScreen = ScreenState.EDIT_ALBUM },
-                onOpenPhotos = { albumId ->
+                onOpenPhotos = { albumId, albumTitle, albumDescription ->
                     selectedAlbumId = albumId
+                    selectedAlbumTitle = albumTitle
+                    selectedAlbumDescription = albumDescription
                     currentScreen = ScreenState.PHOTOS
                 }
             )
 
+
             ScreenState.PHOTOS -> AlbumPhotosScreen(
                 modifier = modifier,
                 albumId = selectedAlbumId ?: 0,
+                albumTitle = selectedAlbumTitle ?: "",
+                albumDescription = selectedAlbumDescription ?: "",
                 onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
 
@@ -92,10 +88,11 @@ fun MainScreen(
             )
 
             ScreenState.EDIT_ALBUM -> EditAlbumScreen(
-                viewModel = viewModelAlbum,
                 modifier = modifier,
+                viewModel = viewModelAlbum,
                 onFinishEdit = { currentScreen = ScreenState.LIST_ALBUMS }
             )
+
 
             ScreenState.PROFILE -> ProfileScreen(
                 authViewModel = authViewModel,
@@ -104,6 +101,8 @@ fun MainScreen(
         }
     }
 }
+
+
 
 @Composable
 fun AuthViewModel.kt() {

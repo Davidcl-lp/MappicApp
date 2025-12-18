@@ -4,7 +4,6 @@ enum class SortField {
     TITLE,
     DATE
 }
-
 enum class SortOrder {
     ASC,
     DESC
