@@ -10,6 +10,7 @@ import com.example.mappic_v3.data.repository.PhotoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import retrofit2.Response.success
 
 class PhotoViewModel(private val albumId: Int) : ViewModel() {
 
@@ -21,6 +22,9 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
     private val _isUploading = MutableStateFlow(false)
     val isUploading: StateFlow<Boolean> = _isUploading
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
@@ -30,18 +34,20 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
 
     fun loadPhotos() {
         viewModelScope.launch {
+            _isLoading.value = true
+            _photos.value = emptyList()
             try {
-                // Limpiamos la lista actual para forzar a Compose a redibujar
-                _photos.value = emptyList()
-
-                // Traemos las fotos nuevas del servidor
                 val result = repo.getPhotos(albumId)
                 _photos.value = result
             } catch (e: Exception) {
-                _errorMessage.value = "Error al recargar fotos"
+                Log.e("PhotoViewModel", "Error al cargar fotos: ${e.message}")
+                _errorMessage.value = "Error al cargar fotos"
+            } finally {
+                _isLoading.value = false
             }
         }
     }
+
 
     fun uploadPhotos(
         context: Context,
@@ -57,7 +63,6 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
         viewModelScope.launch {
             _isUploading.value = true
             _errorMessage.value = null
-
             try {
                 val newPhotos = repo.uploadPhotos(
                     context,
@@ -80,14 +85,13 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
         }
     }
 
-
     fun deletePhotos(photoIds: List<Int>) {
         viewModelScope.launch {
             try {
                 photoIds.forEach { repo.deletePhoto(it) }
                 loadPhotos()
             } catch (e: Exception) {
-                _errorMessage.value = "Error al eliminar"
+                _errorMessage.value = "Error al eliminar fotos"
             }
         }
     }
