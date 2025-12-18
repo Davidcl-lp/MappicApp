@@ -63,4 +63,16 @@ interface ApiService {
 
     @GET("api/user/email/{email}")
     suspend fun searchUserByEmail(@Path("email") email: String): User?
+
+    @GET("api/album/{id}/members")
+    suspend fun getAlbumMembers(@Path("id") albumId: Int): List<User>
+
+    @GET("api/user/albums/member/{id}")
+    suspend fun getSharedAlbums(@Path("id") userId: Int): List<Album>
+
+    @HTTP(method = "DELETE", path = "api/album/member/{id}", hasBody = true)
+    suspend fun deleteAlbumMember(
+        @Path("id") albumId: Int,
+        @Body body: Map<String, Int>
+    ): Any
 }

@@ -33,6 +33,7 @@ fun AlbumPhotosScreen(
     albumId: Int,
     albumTitle: String,
     albumDescription: String,
+    uploaderId: Int,
     onBack: () -> Unit
 ) {
     BackHandler { onBack() }
@@ -51,7 +52,7 @@ fun AlbumPhotosScreen(
             viewModel.uploadPhotos(
                 context = context,
                 uris = uris,
-                uploaderId = 1,
+                uploaderId = uploaderId,
                 description = null
             )
         }

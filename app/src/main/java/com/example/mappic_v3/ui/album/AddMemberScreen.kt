@@ -1,13 +1,17 @@
 package com.example.mappic_v3.ui.album
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.mappic_v3.data.model.auth.User
 
@@ -20,21 +24,24 @@ fun AddMemberScreen(
 ) {
     val foundUser by viewModel.foundUser.collectAsState()
     val memberMessage by viewModel.memberMessage.collectAsState()
-
+    val currentMembers by viewModel.currentMembers.collectAsState()
     var emailInput by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
 
+    // Cargar miembros al iniciar la pantalla
+    LaunchedEffect(albumId) {
+        viewModel.loadMembers(albumId)
+    }
+
     DisposableEffect(Unit) {
         viewModel.clearMemberStatus()
-        onDispose {
-            viewModel.clearMemberStatus()
-        }
+        onDispose { viewModel.clearMemberStatus() }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Añadir Miembro al Álbum $albumId") },
+                title = { Text("Gestionar Miembros") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -43,7 +50,6 @@ fun AddMemberScreen(
             )
         }
     ) { paddingValues ->
-
         Column(
             modifier = Modifier
                 .padding(paddingValues)
@@ -51,7 +57,7 @@ fun AddMemberScreen(
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
+            // BLOQUE DE BÚSQUEDA
             SearchBlock(
                 emailInput = emailInput,
                 onEmailChange = { emailInput = it },
@@ -63,30 +69,77 @@ fun AddMemberScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (memberMessage != null) {
+            memberMessage?.let { msg ->
                 Text(
-                    text = memberMessage!!,
-                    color = if (memberMessage!!.startsWith("Error")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    text = msg,
+                    color = if (msg.startsWith("Error")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // BLOQUE DE USUARIO ENCONTRADO
             foundUser?.let { user ->
                 UserActionsBlock(
                     user = user,
                     onAddMember = { role ->
-                        viewModel.addMember(
-                            albumId = albumId,
-                            newUserId = user.id,
-                            role = role
-                        )
+                        viewModel.addMember(albumId, user.id, role)
+                        emailInput = ""
                     }
                 )
             }
 
             if (isSearching && foundUser == null && memberMessage == null) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(modifier = Modifier.size(30.dp))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // LISTA DE MIEMBROS ACTUALES CON BOTÓN DE ELIMINAR
+            Text(
+                text = "Miembros con acceso",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (currentMembers.isEmpty()) {
+                Text(
+                    "No hay colaboradores aún.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 20.dp)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(currentMembers) { member ->
+                        ListItem(
+                            headlineContent = { Text(member.name) },
+                            supportingContent = { Text(member.email) },
+                            leadingContent = { Icon(Icons.Default.Person, contentDescription = null) },
+                            trailingContent = {
+                                IconButton(onClick = {
+                                    viewModel.deleteMember(albumId, member.id)
+                                }) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Eliminar",
+                                        tint = Color.Red.copy(alpha = 0.7f)
+                                    )
+                                }
+                            },
+                            colors = ListItemDefaults.colors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            )
+                        )
+                    }
+                }
             }
         }
     }
@@ -98,12 +151,10 @@ fun SearchBlock(emailInput: String, onEmailChange: (String) -> Unit, onSearch: (
         value = emailInput,
         onValueChange = onEmailChange,
         label = { Text("Email del nuevo miembro") },
-        placeholder = { Text("ejemplo@correo.com") },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
     )
-
     Spacer(modifier = Modifier.height(8.dp))
-
     Button(
         onClick = onSearch,
         enabled = emailInput.isNotBlank(),
@@ -113,34 +164,23 @@ fun SearchBlock(emailInput: String, onEmailChange: (String) -> Unit, onSearch: (
     }
 }
 
-// Composable para mostrar el usuario encontrado y los botones de rol
 @Composable
 fun UserActionsBlock(user: User, onAddMember: (String) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Usuario Encontrado:", style = MaterialTheme.typography.titleMedium)
-            Text(text = "${user.name} (${user.email})", style = MaterialTheme.typography.bodyLarge)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Button(
-                    onClick = { onAddMember("viewer") },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                ) {
-                    Text("Añadir como Viewer")
+            Text("Resultado:", style = MaterialTheme.typography.labelLarge)
+            Text(text = user.name, style = MaterialTheme.typography.titleMedium)
+            Text(text = user.email, style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalButton(onClick = { onAddMember("viewer") }, modifier = Modifier.weight(1f)) {
+                    Text("Lector")
                 }
-
-                Button(
-                    onClick = { onAddMember("editor") }
-                ) {
-                    Text("Añadir como Editor")
+                Button(onClick = { onAddMember("editor") }, modifier = Modifier.weight(1f)) {
+                    Text("Editor")
                 }
             }
         }

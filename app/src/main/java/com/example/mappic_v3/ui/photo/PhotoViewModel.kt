@@ -2,6 +2,7 @@ package com.example.mappic_v3.ui.photo
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mappic_v3.data.model.Photo
@@ -17,6 +18,11 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
     private val _photos = MutableStateFlow<List<Photo>>(emptyList())
     val photos: StateFlow<List<Photo>> = _photos
 
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
 
     init {
         loadPhotos()
@@ -24,7 +30,12 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
 
     private fun loadPhotos() {
         viewModelScope.launch {
-            _photos.value = repo.getPhotos(albumId)
+            try {
+                val result = repo.getPhotos(albumId)
+                _photos.value = result
+            } catch (e: Exception) {
+                Log.e("PhotoViewModel", "Error: ${e.message}")
+            }
         }
     }
 
@@ -34,29 +45,48 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
         uploaderId: Int,
         description: String?
     ) {
+        if (uploaderId <= 0) {
+            _errorMessage.value = "ID de usuario no válido"
+            return
+        }
+
         viewModelScope.launch {
-            repo.uploadPhotos(
-                context = context,
-                uris = uris,
-                albumId = albumId,
-                uploaderId = uploaderId,
-                description = description
-            )
-            loadPhotos()
+            _isUploading.value = true
+            _errorMessage.value = null
+            try {
+                val success = repo.uploadPhotos(
+                    context = context,
+                    uris = uris,
+                    albumId = albumId,
+                    uploaderId = uploaderId,
+                    description = description
+                )
+
+                if (success) {
+                    loadPhotos()
+                } else {
+                    _errorMessage.value = "Error al subir fotos"
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Error de conexión"
+            } finally {
+                _isUploading.value = false
+            }
         }
     }
 
-    fun deletePhoto(photoId: Int) {
-        viewModelScope.launch {
-            repo.deletePhoto(photoId)
-            loadPhotos()
-        }
-    }
     fun deletePhotos(photoIds: List<Int>) {
         viewModelScope.launch {
-            photoIds.forEach { repo.deletePhoto(it) }
-            loadPhotos()
+            try {
+                photoIds.forEach { repo.deletePhoto(it) }
+                loadPhotos()
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al eliminar"
+            }
         }
     }
 
+    fun clearError() {
+        _errorMessage.value = null
+    }
 }

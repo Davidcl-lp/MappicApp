@@ -27,7 +27,7 @@ fun MainScreen(
     var selectedAlbumDescription by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val authViewModel = remember { AuthViewModel(context) }
-
+    var currentUserId by remember { mutableStateOf<Int?>(null) }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -49,6 +49,7 @@ fun MainScreen(
             ScreenState.LOGIN -> LoginScreen(
                 viewModel = authViewModel,
                 onLoginSuccess = { userId ->
+                    currentUserId = userId
                     viewModelAlbum.loadAlbumsForUser(userId)
                     currentScreen = ScreenState.LIST_ALBUMS
                 },
@@ -58,6 +59,7 @@ fun MainScreen(
             ScreenState.REGISTER -> RegisterScreen(
                 viewModel = authViewModel,
                 onRegisterSuccess = { userId ->
+                    currentUserId = userId
                     viewModelAlbum.loadAlbumsForUser(userId)
                     currentScreen = ScreenState.LIST_ALBUMS
                 },
@@ -84,6 +86,7 @@ fun MainScreen(
                 albumId = selectedAlbumId ?: 0,
                 albumTitle = selectedAlbumTitle ?: "",
                 albumDescription = selectedAlbumDescription ?: "",
+                uploaderId = currentUserId ?: 0,
                 onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
 
@@ -113,19 +116,11 @@ fun MainScreen(
                         onBack = { currentScreen = ScreenState.LIST_ALBUMS } // Volver
                     )
                 } else {
-                    // Manejar error si no hay ID
                     currentScreen = ScreenState.LIST_ALBUMS
                 }
             }
         }
     }
-}
-
-
-
-@Composable
-fun AuthViewModel.kt() {
-    TODO("Not yet implemented")
 }
 
 @Composable
@@ -170,7 +165,6 @@ fun ProfileScreen(
                 Button(onClick = {
                     coroutineScope.launch {
                         authViewModel.token?.let {
-                            // Aquí puedes llamar a backend para borrar cuenta
                             authViewModel.logout()
                             onLogout()
                         }
