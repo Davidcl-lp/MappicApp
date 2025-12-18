@@ -55,7 +55,6 @@ fun AlbumPhotosScreen(
         ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            // Persistir permisos (Truco para evitar crash en versiones nuevas de Android)
             uris.forEach { uri ->
                 try {
                     context.contentResolver.takePersistableUriPermission(
@@ -63,7 +62,7 @@ fun AlbumPhotosScreen(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
                 } catch (e: Exception) {
-                    // A veces falla en algunas versiones, no pasa nada, continuamos
+
                 }
             }
 
