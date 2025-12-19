@@ -151,13 +151,15 @@ class AlbumViewModel(
         _editingAlbum.value = album
     }
 
-    fun editAlbum(id: Int, title: String, description: String?) {
+    fun editAlbum(id: Int, title: String, description: String?, site: String?) {
         viewModelScope.launch {
             albumRepository.updateAlbum(
                 id,
                 UpdateAlbumRequest(
                     title = title,
-                    description = description
+                    description = description,
+                    location_name = site
+
                 )
             )
             _editingAlbum.value = null

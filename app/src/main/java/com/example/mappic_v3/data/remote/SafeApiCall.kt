@@ -7,5 +7,4 @@ suspend fun <T> safeCall(block: suspend () -> T): T? {
     } catch (e: Exception) {
         e.printStackTrace()
         null
-    }
-}
+    }}

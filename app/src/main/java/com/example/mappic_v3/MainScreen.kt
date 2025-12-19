@@ -29,9 +29,9 @@ fun MainScreen(
     var selectedAlbumDescription by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val authViewModel = remember { AuthViewModel(context) }
+    var currentUserId by remember { mutableStateOf<Int?>(null) }
     var currentUserRole by remember { mutableStateOf("viewer") }
     var selectedAlbumOwnerId by remember { mutableStateOf<Int?>(null) }
-    var currentUserId by remember { mutableStateOf<Int?>(null) }
 
     val viewModelAlbum = remember {
         AlbumViewModel(
@@ -121,13 +121,15 @@ fun MainScreen(
             ScreenState.CREATE_ALBUM -> CreateAlbumScreen(
                 modifier = modifier,
                 viewModel = viewModelAlbum,
-                onFinishCreate = { currentScreen = ScreenState.LIST_ALBUMS }
+                onFinishCreate = { currentScreen = ScreenState.LIST_ALBUMS },
+                onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
 
             ScreenState.EDIT_ALBUM -> EditAlbumScreen(
                 modifier = modifier,
                 viewModel = viewModelAlbum,
-                onFinishEdit = { currentScreen = ScreenState.LIST_ALBUMS }
+                onFinishEdit = { currentScreen = ScreenState.LIST_ALBUMS },
+                onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
 
 
@@ -148,7 +150,6 @@ fun MainScreen(
                     currentScreen = ScreenState.LIST_ALBUMS
                 }
             }
-
         }
     }
 }

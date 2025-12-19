@@ -50,22 +50,13 @@ fun AlbumPhotosScreen(
 {
     BackHandler { onBack() }
     val context = LocalContext.current
-
     val members by albumViewModel.currentMembers.collectAsState()
-
     LaunchedEffect(albumId) {
         albumViewModel.loadMembers(albumId)
-    }
-
-    // Buscamos si el usuario actual está en la lista con un rol mejor que 'viewer'
-    val effectiveRole = remember(members, userRole) {
+    } val effectiveRole = remember(members, userRole) {
         val member = members.find { it.id == uploaderId }
-        // Si lo encuentra en la lista de miembros, usamos ese rol (editor/viewer)
-        // Si no, usamos el que viene por navegación
         member?.role ?: userRole
     }
-    // -----------------------------------------------
-
     var selectionMode by remember { mutableStateOf(false) }
     var selectedPhotos by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var viewerOpen by remember { mutableStateOf(false) }
@@ -129,6 +120,7 @@ fun AlbumPhotosScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
+
         Box(Modifier.fillMaxSize()) {
             Column(
                 modifier
@@ -136,6 +128,7 @@ fun AlbumPhotosScreen(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
+
                 Text(albumTitle, style = MaterialTheme.typography.headlineLarge)
 
                 if (albumDescription.isNotEmpty()) {
@@ -190,6 +183,7 @@ fun AlbumPhotosScreen(
                     ) {
                         Text("Eliminar (${selectedPhotos.size})")
                     }
+
                     Spacer(Modifier.height(12.dp))
                 }
 
@@ -236,6 +230,7 @@ fun AlbumPhotosScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
                                 )
+
                                 if (isSelected) {
                                     Box(
                                         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
@@ -258,10 +253,12 @@ fun AlbumPhotosScreen(
         }
     }
 
+
     if (viewerOpen) {
         PhotoViewer(photos = photos, startIndex = startIndex, onDismiss = { viewerOpen = false })
     }
 }
+
 @Composable
 fun PhotoViewer(
     photos: List<Photo>,
@@ -272,6 +269,7 @@ fun PhotoViewer(
         initialPage = startIndex,
         pageCount = { photos.size }
     )
+
     var dragOffset by remember { mutableStateOf(0f) }
 
     BackHandler { onDismiss() }
@@ -305,3 +303,4 @@ fun PhotoViewer(
         }
     }
 }
+

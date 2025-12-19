@@ -42,6 +42,17 @@ class PhotoViewModel(private val repo: PhotoRepository) : ViewModel() {
     }
 
     fun uploadPhotos(context: Context, uris: List<Uri>, albumId: Int, uploaderId: Int, description: String?) {
+    fun uploadPhotos(
+        context: Context,
+        uris: List<Uri>,
+        uploaderId: Int,
+        description: String?
+    ) {
+        if (uploaderId <= 0) {
+            _errorMessage.value = "ID de usuario no válido"
+            return
+        }
+
         viewModelScope.launch {
             _isUploading.value = true
             try {
@@ -68,3 +79,4 @@ class PhotoViewModel(private val repo: PhotoRepository) : ViewModel() {
 
     fun clearError() { _errorMessage.value = null }
 }
+    }
