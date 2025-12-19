@@ -10,11 +10,10 @@ import com.example.mappic_v3.data.repository.PhotoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import retrofit2.Response.success
 
-class PhotoViewModel(private val albumId: Int) : ViewModel() {
+class PhotoViewModel(private val albumId: Int, private val repo: PhotoRepository) : ViewModel() {
 
-    private val repo = PhotoRepository()
+
 
     private val _photos = MutableStateFlow<List<Photo>>(emptyList())
     val photos: StateFlow<List<Photo>> = _photos
@@ -31,7 +30,6 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
     init {
         loadPhotos()
     }
-
     fun loadPhotos() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -47,8 +45,6 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
             }
         }
     }
-
-
     fun uploadPhotos(
         context: Context,
         uris: List<Uri>,

@@ -15,6 +15,7 @@ import com.example.mappic_v3.ui.components.TopBar
 import com.example.mappic_v3.ui.photo.AlbumPhotosScreen
 import kotlinx.coroutines.launch
 import com.example.mappic_v3.data.repository.*
+import com.example.mappic_v3.ui.photo.PhotoViewModel
 
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
@@ -32,6 +33,8 @@ fun MainScreen(
     var currentUserRole by remember { mutableStateOf("viewer") }
     var selectedAlbumOwnerId by remember { mutableStateOf<Int?>(null) }
     val viewModelAlbum = AlbumViewModel(albumRepository = AlbumRepository(), userRepository = UserRepository(), albumMemberRepository = AlbumMemberRepository(), currentUserId = currentUserId)
+    val viewModelPhoto = PhotoViewModel(albumId = selectedAlbumId ?: 0, repo = PhotoRepository())
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -88,9 +91,9 @@ fun MainScreen(
             )
 
             ScreenState.PHOTOS -> AlbumPhotosScreen(
+                viewModelPhoto = viewModelPhoto,
                 userRole = currentUserRole,
                 modifier = modifier,
-                albumId = selectedAlbumId ?: 0,
                 albumTitle = selectedAlbumTitle ?: "",
                 albumDescription = selectedAlbumDescription ?: "",
                 uploaderId = currentUserId ?: 0,
@@ -101,13 +104,15 @@ fun MainScreen(
             ScreenState.CREATE_ALBUM -> CreateAlbumScreen(
                 modifier = modifier,
                 viewModel = viewModelAlbum,
-                onFinishCreate = { currentScreen = ScreenState.LIST_ALBUMS }
+                onFinishCreate = { currentScreen = ScreenState.LIST_ALBUMS },
+                onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
 
             ScreenState.EDIT_ALBUM -> EditAlbumScreen(
                 modifier = modifier,
                 viewModel = viewModelAlbum,
-                onFinishEdit = { currentScreen = ScreenState.LIST_ALBUMS }
+                onFinishEdit = { currentScreen = ScreenState.LIST_ALBUMS },
+                onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
 
 

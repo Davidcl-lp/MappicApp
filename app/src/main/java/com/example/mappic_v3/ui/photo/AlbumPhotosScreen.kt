@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -31,8 +30,8 @@ import com.example.mappic_v3.data.model.Photo.Photo
 
 @Composable
 fun AlbumPhotosScreen(
+    viewModelPhoto: PhotoViewModel,
     userRole: String,
-    albumId: Int,
     albumTitle: String,
     albumDescription: String,
     uploaderId: Int,
@@ -42,7 +41,7 @@ fun AlbumPhotosScreen(
 ) {
     BackHandler { onBack() }
     val context = LocalContext.current
-    val viewModel = remember { PhotoViewModel(albumId) }
+    val viewModel = remember { viewModelPhoto }
     val photos by viewModel.photos.collectAsState()
     var selectionMode by remember { mutableStateOf(false) }
     var selectedPhotos by remember { mutableStateOf<Set<Int>>(emptySet()) }
