@@ -45,9 +45,7 @@ fun AlbumPhotosScreen(
     photoViewModel: PhotoViewModel,
     modifier: Modifier,
     onBack: () -> Unit
-)
-
-{
+) {
     BackHandler { onBack() }
     val context = LocalContext.current
     val members by albumViewModel.currentMembers.collectAsState()
@@ -73,21 +71,25 @@ fun AlbumPhotosScreen(
     val role = effectiveRole.lowercase().trim()
 
     val canUpload = remember(members, userRole, uploaderId, albumOwnerId) {
-        if (members.isEmpty()) {
-            val navRole = userRole.lowercase()
-            return@remember navRole == "owner" || navRole == "editor"
-        }
+        val isCreator = uploaderId != 0 && uploaderId == albumOwnerId
 
-        val isOwner = uploaderId == albumOwnerId
+        // Limpiamos los strings para evitar errores por espacios o mayúsculas
+        val navRole = userRole.lowercase().trim()
 
-        val memberRole = members
-            .find { it.id == uploaderId }
-            ?.role
-            ?.lowercase()
+        // Buscamos al usuario en la lista de miembros que llega de la DB
+        val memberInList = members.find { it.id == uploaderId }
+        val roleInList = memberInList?.role?.lowercase()?.trim() ?: ""
 
-        isOwner || memberRole == "editor" || memberRole == "owner"
+        println("DEBUG: Rol Navegación: '$navRole'")
+        println("DEBUG: Rol en Lista DB: '$roleInList'")
+        println("DEBUG: ¿Es Creador?: $isCreator")
+
+        // Si es el creador, o si el rol de navegación es de poder,
+        // o si el rol en la lista de la base de datos es de poder:
+        isCreator ||
+                navRole == "owner" || navRole == "editor" ||
+                roleInList == "owner" || roleInList == "editor"
     }
-
 
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -107,7 +109,8 @@ fun AlbumPhotosScreen(
                         uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
-                } catch (e: Exception) {}
+                } catch (e: Exception) {
+                }
             }
             photoViewModel.uploadPhotos(
                 context = context,
@@ -161,7 +164,9 @@ fun AlbumPhotosScreen(
                     if (selectionMode) {
                         OutlinedButton(
                             onClick = {
-                                selectedPhotos = if (selectedPhotos.size == photos.size) emptySet() else photos.map { it.id }.toSet()
+                                selectedPhotos =
+                                    if (selectedPhotos.size == photos.size) emptySet() else photos.map { it.id }
+                                        .toSet()
                                 if (selectedPhotos.isEmpty()) selectionMode = false
                             },
                             shape = RoundedCornerShape(12.dp)
@@ -190,119 +195,141 @@ fun AlbumPhotosScreen(
                 }
 
                 if (photos.isEmpty()) {
-                    Text("No hay fotos en este álbum", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    return@Column
-                }
+                    Box(
+                        Modifier.fillMaxWidth().padding(top = 20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No hay fotos en este álbum",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(photos, key = { it.id }) { photo ->
-                        val isSelected = photo.id in selectedPhotos
-                        Card(
-                            modifier = Modifier
-                                .aspectRatio(1f)
-                                .pointerInput(selectionMode, selectedPhotos) {
-                                    detectTapGestures(
-                                        onLongPress = {
-                                            selectionMode = true
-                                            selectedPhotos = setOf(photo.id)
-                                        },
-                                        onTap = {
-                                            if (selectionMode) {
-                                                selectedPhotos = if (isSelected) selectedPhotos - photo.id else selectedPhotos + photo.id
-                                                if (selectedPhotos.isEmpty()) selectionMode = false
-                                            } else {
-                                                viewerOpen = true
-                                                startIndex = photos.indexOf(photo)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        contentPadding = PaddingValues(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(photos, key = { it.id }) { photo ->
+                            val isSelected = photo.id in selectedPhotos
+                            Card(
+                                modifier = Modifier
+                                    .aspectRatio(1f)
+                                    .pointerInput(selectionMode, selectedPhotos) {
+                                        detectTapGestures(
+                                            onLongPress = {
+                                                selectionMode = true
+                                                selectedPhotos = setOf(photo.id)
+                                            },
+                                            onTap = {
+                                                if (selectionMode) {
+                                                    selectedPhotos =
+                                                        if (isSelected) selectedPhotos - photo.id else selectedPhotos + photo.id
+                                                    if (selectedPhotos.isEmpty()) selectionMode =
+                                                        false
+                                                } else {
+                                                    viewerOpen = true
+                                                    startIndex = photos.indexOf(photo)
+                                                }
                                             }
-                                        }
+                                        )
+                                    },
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(6.dp)
+                            ) {
+                                Box {
+                                    AsyncImage(
+                                        model = photo.url,
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
                                     )
-                                },
-                            shape = RoundedCornerShape(16.dp),
-                            elevation = CardDefaults.cardElevation(6.dp)
-                        ) {
-                            Box {
-                                AsyncImage(
-                                    model = photo.url,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
 
-                                if (isSelected) {
-                                    Box(
-                                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                                    if (isSelected) {
+                                        Box(
+                                            Modifier.fillMaxSize().background(
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                                            ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(32.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            if (isUploading) {
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color.White)
+                if (isUploading) {
+                    Box(
+                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color.White)
+                    }
                 }
             }
         }
+
+    }
+        if (viewerOpen) {
+            PhotoViewer(
+                photos = photos,
+                startIndex = startIndex,
+                onDismiss = { viewerOpen = false })
+        }
     }
 
+    @Composable
+    fun PhotoViewer(
+        photos: List<Photo>,
+        startIndex: Int,
+        onDismiss: () -> Unit
+    ) {
+        val pagerState = rememberPagerState(
+            initialPage = startIndex,
+            pageCount = { photos.size }
+        )
 
-    if (viewerOpen) {
-        PhotoViewer(photos = photos, startIndex = startIndex, onDismiss = { viewerOpen = false })
-    }
-}
+        var dragOffset by remember { mutableStateOf(0f) }
 
-@Composable
-fun PhotoViewer(
-    photos: List<Photo>,
-    startIndex: Int,
-    onDismiss: () -> Unit
-) {
-    val pagerState = rememberPagerState(
-        initialPage = startIndex,
-        pageCount = { photos.size }
-    )
+        BackHandler { onDismiss() }
 
-    var dragOffset by remember { mutableStateOf(0f) }
-
-    BackHandler { onDismiss() }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures(
-                        onVerticalDrag = { _, dragAmount -> dragOffset += dragAmount },
-                        onDragEnd = {
-                            if (kotlin.math.abs(dragOffset) > 200f) onDismiss()
-                            dragOffset = 0f
-                        }
+        Dialog(onDismissRequest = onDismiss) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onVerticalDrag = { _, dragAmount -> dragOffset += dragAmount },
+                            onDragEnd = {
+                                if (kotlin.math.abs(dragOffset) > 200f) onDismiss()
+                                dragOffset = 0f
+                            }
+                        )
+                    }
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    AsyncImage(
+                        model = photos[page].url,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
                     )
                 }
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
-                AsyncImage(
-                    model = photos[page].url,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
-                )
             }
         }
     }
-}
 

@@ -13,9 +13,11 @@ interface AlbumMemberApi {
         @Body request: AddMemberRequest
     ): User
 
-    @GET("api/album/{id}/members")
-    suspend fun getAlbumMembers(@Path("id") albumId: Int): List<User>
+   // @GET("api/album/{id}/members")
+  //  suspend fun getAlbumMembers(@Path("id") albumId: Int): List<User>
 
+    @GET("api/album/member/{id}")
+    suspend fun getAlbumMembers(@Path("id") albumId: Int): List<User>
     @GET("api/user/email/{email}")
     suspend fun searchUserByEmail(@Path("email") email: String): User?
 
