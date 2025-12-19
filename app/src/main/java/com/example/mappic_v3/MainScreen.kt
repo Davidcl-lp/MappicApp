@@ -40,9 +40,16 @@ fun MainScreen(
             albumMemberRepository = AlbumMemberRepository()
         )
     }
-    val photoViewModel = remember {
-        PhotoViewModel(PhotoRepository())
+    val photoRepo = PhotoRepository()
+    val photoViewModel = PhotoViewModel(photoRepo)
+    LaunchedEffect(selectedAlbumId) {
+        selectedAlbumId?.let { id ->
+            photoViewModel.loadPhotos(id)
+        }
     }
+
+
+
 
 
 
@@ -111,11 +118,10 @@ fun MainScreen(
                 uploaderId = currentUserId ?: 0,
                 albumOwnerId = selectedAlbumOwnerId ?: 0,
                 albumViewModel = viewModelAlbum,
-                photoViewModel = photoViewModel,
+                photoViewModel = photoViewModel!!,
                 modifier = modifier,
                 onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
-
 
 
             ScreenState.CREATE_ALBUM -> CreateAlbumScreen(

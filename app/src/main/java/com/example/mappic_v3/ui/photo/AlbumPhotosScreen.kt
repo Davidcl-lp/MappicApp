@@ -53,7 +53,9 @@ fun AlbumPhotosScreen(
     val members by albumViewModel.currentMembers.collectAsState()
     LaunchedEffect(albumId) {
         albumViewModel.loadMembers(albumId)
-    } val effectiveRole = remember(members, userRole) {
+    }
+
+    val effectiveRole = remember(members, userRole) {
         val member = members.find { it.id == uploaderId }
         member?.role ?: userRole
     }

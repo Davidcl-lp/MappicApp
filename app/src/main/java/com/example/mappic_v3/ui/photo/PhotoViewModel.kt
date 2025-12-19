@@ -2,7 +2,6 @@ package com.example.mappic_v3.ui.photo
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mappic_v3.data.model.Photo.Photo
@@ -10,7 +9,6 @@ import com.example.mappic_v3.data.repository.PhotoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import retrofit2.Response.success
 
 class PhotoViewModel(private val repo: PhotoRepository) : ViewModel() {
 
@@ -29,7 +27,6 @@ class PhotoViewModel(private val repo: PhotoRepository) : ViewModel() {
     fun loadPhotos(albumId: Int) {
         viewModelScope.launch {
             _isLoading.value = true
-            _photos.value = emptyList()
             try {
                 val result = repo.getPhotos(albumId)
                 _photos.value = result
@@ -41,10 +38,10 @@ class PhotoViewModel(private val repo: PhotoRepository) : ViewModel() {
         }
     }
 
-    fun uploadPhotos(context: Context, uris: List<Uri>, albumId: Int, uploaderId: Int, description: String?) {
     fun uploadPhotos(
         context: Context,
         uris: List<Uri>,
+        albumId: Int,
         uploaderId: Int,
         description: String?
     ) {
@@ -71,12 +68,14 @@ class PhotoViewModel(private val repo: PhotoRepository) : ViewModel() {
         viewModelScope.launch {
             try {
                 photoIds.forEach { repo.deletePhoto(it) }
-                } catch (e: Exception) {
+                _photos.value = _photos.value.filter { it.id !in photoIds }
+            } catch (e: Exception) {
                 _errorMessage.value = "Error al eliminar fotos"
             }
         }
     }
 
-    fun clearError() { _errorMessage.value = null }
-}
+    fun clearError() {
+        _errorMessage.value = null
     }
+}
