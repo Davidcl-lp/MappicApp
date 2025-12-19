@@ -1,5 +1,4 @@
 package com.example.mappic_v3.ui.photo
-
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -26,7 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
-import com.example.mappic_v3.data.model.Photo
+import com.example.mappic_v3.data.model.Photo.Photo
 import com.example.mappic_v3.ui.album.AlbumViewModel // Importante para cargar miembros
 
 @Composable
@@ -65,7 +65,7 @@ fun AlbumPhotosScreen(
     var selectedPhotos by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var viewerOpen by remember { mutableStateOf(false) }
     var startIndex by remember { mutableStateOf(0) }
-
+    val isOwner = uploaderId == albumOwnerId
     val isUploading by viewModel.isUploading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 

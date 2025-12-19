@@ -2,8 +2,9 @@ package com.example.mappic_v3.data.repository
 
 import android.content.Context
 import android.net.Uri
-import com.example.mappic_v3.data.model.Photo
+import com.example.mappic_v3.data.model.Photo.Photo
 import com.example.mappic_v3.data.remote.ApiClient
+import com.example.mappic_v3.data.remote.safeCall
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -17,7 +18,7 @@ import java.io.InputStream
 class PhotoRepository {
 
     suspend fun getPhotos(albumId: Int): List<Photo> =
-        safeCall { ApiClient.apiService.getPhotosByAlbum(albumId) } ?: emptyList()
+        safeCall { ApiClient.photoApi.getPhotosByAlbum(albumId) } ?: emptyList()
 
     suspend fun uploadPhotos(
         context: Context,
@@ -43,7 +44,7 @@ class PhotoRepository {
             val uploaderIdBody = uploaderId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
             val descBody = (description ?: "").toRequestBody("text/plain".toMediaTypeOrNull())
 
-            val response = ApiClient.apiService.uploadPhotos(
+            val response = ApiClient.photoApi.uploadPhotos(
                 parts,
                 albumIdBody,
                 uploaderIdBody,
@@ -60,18 +61,7 @@ class PhotoRepository {
             null
         }
     }
-
-
     suspend fun deletePhoto(photoId: Int): Boolean =
-        safeCall { ApiClient.apiService.deletePhoto(photoId) } != null
+        safeCall { ApiClient.photoApi.deletePhoto(photoId) } != null
 
-}
-
-private suspend fun <T> safeCall(block: suspend () -> T): T? {
-    return try {
-        withContext(Dispatchers.IO) { block() }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
 }

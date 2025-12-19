@@ -1,4 +1,4 @@
-package com.example.mappic_v3.data.model
+package com.example.mappic_v3.data.model.Member
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
