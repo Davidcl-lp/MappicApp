@@ -26,7 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
-import com.example.mappic_v3.data.model.Photo
+import com.example.mappic_v3.data.model.Photo.Photo
 
 
 @Composable

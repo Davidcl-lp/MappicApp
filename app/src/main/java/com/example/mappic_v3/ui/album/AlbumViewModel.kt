@@ -2,11 +2,12 @@ package com.example.mappic_v3.ui.album
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mappic_v3.data.model.AddMemberRequest
-import com.example.mappic_v3.data.model.Album
-import com.example.mappic_v3.data.model.CreateAlbumRequest
-import com.example.mappic_v3.data.model.UpdateAlbumRequest
+import com.example.mappic_v3.data.model.Member.AddMemberRequest
+import com.example.mappic_v3.data.model.album.Album
+import com.example.mappic_v3.data.model.album.CreateAlbumRequest
+import com.example.mappic_v3.data.model.album.UpdateAlbumRequest
 import com.example.mappic_v3.data.model.auth.User
+import com.example.mappic_v3.data.repository.AlbumMemberRepository
 import com.example.mappic_v3.data.repository.AlbumRepository
 import com.example.mappic_v3.data.repository.UserRepository
 import com.example.mappic_v3.ui.SortField
@@ -15,15 +16,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class AlbumViewModel : ViewModel() {
+class AlbumViewModel(
+    private val albumRepository: AlbumRepository,
+    private val userRepository: UserRepository,
+    private val albumMemberRepository: AlbumMemberRepository,
+    private val currentUserId: Int?
+) : ViewModel() {
 
-    private val repo = AlbumRepository()
-    private val userRepo = UserRepository()
 
     private val _albums = MutableStateFlow<List<Album>>(emptyList())
     val albums: StateFlow<List<Album>> = _albums
-
-    private var currentUserId: Int? = null
 
     private val _editingAlbum = MutableStateFlow<Album?>(null)
     val editingAlbum: StateFlow<Album?> = _editingAlbum
@@ -37,63 +39,16 @@ class AlbumViewModel : ViewModel() {
     private val _memberMessage = MutableStateFlow<String?>(null)
     val memberMessage: StateFlow<String?> = _memberMessage
 
-    init {}
-
-    fun addMember(albumId: Int, userId: Int, role: String) {
-        viewModelScope.launch {
-            _memberMessage.value = null
-
-            try {
-                val user = repo.addMemberToAlbum(
-                    AddMemberRequest(
-                        albumId = albumId,
-                        userId = userId,
-                        role = role
-                    )
-                )
-
-                if (user != null) {
-                    _currentMembers.value = _currentMembers.value + user
-                    _memberMessage.value = "Miembro añadido correctamente"
-                } else {
-                    _memberMessage.value = "No se pudo añadir al miembro"
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _memberMessage.value = "Error de conexión"
-            }
-        }
+    init {
+        loadAlbumsForUser()
     }
-
-
-
-
-
-    fun searchUserByEmail(email: String) {
-        _foundUser.value = null
-        _memberMessage.value = null
-        viewModelScope.launch {
-            val user = userRepo.findUserByEmail(email)
-            if (user != null) {
-                _foundUser.value = user
-                _memberMessage.value = "User found: ${user.name}"
-            } else {
-                _memberMessage.value = "Error: User not found with that email."
-            }
-        }
-    }
-
-    fun clearMemberStatus() {
-        _memberMessage.value = null
-        _foundUser.value = null
-    }
-
-    fun loadAlbumsForUser(userId: Int) {
-        currentUserId = userId
+    fun loadAlbumsForUser() {
         viewModelScope.launch {
             try {
-                val owned = repo.getUserAlbums(userId)
-                val shared = repo.getSharedAlbums(userId)
+                if(currentUserId == null) return@launch
+                _albums.value = emptyList()
+                val owned = albumRepository.getUserAlbums(currentUserId)
+                val shared = albumRepository.getSharedAlbums(currentUserId)
                 _albums.value = owned + shared
             } catch (e: Exception) {
                 println("Error cargando álbumes: ${e.message}")
@@ -104,7 +59,7 @@ class AlbumViewModel : ViewModel() {
     private fun reload() {
         val id = currentUserId
         if (id != null) {
-            loadAlbumsForUser(id)
+            loadAlbumsForUser()
         }
     }
 
@@ -122,7 +77,7 @@ class AlbumViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            repo.createAlbum(
+            albumRepository.createAlbum(
                 CreateAlbumRequest(
                     title = title,
                     description = description,
@@ -139,7 +94,7 @@ class AlbumViewModel : ViewModel() {
 
     fun deleteAlbum(id: Int) {
         viewModelScope.launch {
-            repo.deleteAlbum(id)
+            albumRepository.deleteAlbum(id)
             reload()
         }
     }
@@ -150,7 +105,7 @@ class AlbumViewModel : ViewModel() {
 
     fun editAlbum(id: Int, title: String, description: String?) {
         viewModelScope.launch {
-            repo.updateAlbum(
+            albumRepository.updateAlbum(
                 id,
                 UpdateAlbumRequest(
                     title = title,
@@ -180,11 +135,57 @@ class AlbumViewModel : ViewModel() {
         _albums.value = sorted
     }
 
+
+
+    fun addMember(albumId: Int, userId: Int, role: String) {
+        viewModelScope.launch {
+            _memberMessage.value = null
+
+            try {
+                val user = albumMemberRepository.addMemberToAlbum(
+                    AddMemberRequest(
+                        albumId = albumId,
+                        userId = userId,
+                        role = role
+                    )
+                )
+
+                if (user != null) {
+                    _currentMembers.value = _currentMembers.value + user
+                    _memberMessage.value = "Miembro añadido correctamente"
+                } else {
+                    _memberMessage.value = "No se pudo añadir al miembro"
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _memberMessage.value = "Error de conexión"
+            }
+        }
+    }
+
+    fun searchUserByEmail(email: String) {
+        _foundUser.value = null
+        _memberMessage.value = null
+        viewModelScope.launch {
+            val user = userRepository.findUserByEmail(email)
+            if (user != null) {
+                _foundUser.value = user
+                _memberMessage.value = "User found: ${user.name}"
+            } else {
+                _memberMessage.value = "Error: User not found with that email."
+            }
+        }
+    }
+
+    fun clearMemberStatus() {
+        _memberMessage.value = null
+        _foundUser.value = null
+    }
     fun loadMembers(albumId: Int) {
         viewModelScope.launch {
             _currentMembers.value = emptyList()
             try {
-                val members = repo.getAlbumMembers(albumId)
+                val members = albumMemberRepository.getAlbumMembers(albumId)
                 _currentMembers.value = members
             } catch (e: Exception) {
                 _memberMessage.value = "Error al cargar miembros"
@@ -194,7 +195,7 @@ class AlbumViewModel : ViewModel() {
 
     fun deleteMember(albumId: Int, userId: Int) {
         viewModelScope.launch {
-            val success = repo.removeMember(albumId, userId)
+            val success = albumMemberRepository.removeMember(albumId, userId)
 
             if (success) {
                 _memberMessage.value = "Miembro eliminado correctamente"

@@ -2,21 +2,15 @@ package com.example.mappic_v3.ui.auth
 
 import android.content.Context
 import retrofit2.HttpException
-import android.os.Build
-import androidx.annotation.RequiresExtension
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mappic_v3.data.model.auth.*
 import com.example.mappic_v3.data.remote.ApiClient
-import com.example.mappic_v3.data.remote.ApiClient.apiService
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.lang.reflect.Modifier
 
 class AuthViewModel(private val context: Context) : ViewModel() {
 
@@ -41,7 +35,7 @@ class AuthViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 val request = RegisterRequest(username, email, password)
-                val response: AuthResponse = ApiClient.authApiService.register(request)
+                val response: AuthResponse = ApiClient.authApi.register(request)
                 token = response.token
                 _userId.value = response.user.id
                 _isRegistered.value = true
@@ -69,7 +63,7 @@ class AuthViewModel(private val context: Context) : ViewModel() {
     fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             try {
-                val response = ApiClient.authApiService.login(LoginRequest(email, password))
+                val response = ApiClient.authApi.login(LoginRequest(email, password))
                 token = response.token
                 _userId.value = response.user.id
                 _isLoggedIn.value = true
@@ -111,7 +105,7 @@ class AuthViewModel(private val context: Context) : ViewModel() {
 
         viewModelScope.launch {
             try {
-                ApiClient.authApiService.deleteCurrentUser("Bearer $currentToken")
+                ApiClient.authApi.deleteCurrentUser("Bearer $currentToken")
                 logout()
                 onResult(true)
             } catch (e: Exception) {

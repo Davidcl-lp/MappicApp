@@ -17,5 +17,5 @@ class UserRepository {
     }
 
     suspend fun findUserByEmail(email: String):User? =
-        safeCall { ApiClient.apiService.searchUserByEmail(email) }
+        safeCall { ApiClient.authApi.searchUserByEmail(email) }
 }

@@ -1,6 +1,8 @@
-package com.example.mappic_v3.data.repository.auth
+package com.example.mappic_v3.data.repository
 
-import com.example.mappic_v3.data.model.auth.*
+import com.example.mappic_v3.data.model.auth.AuthResponse
+import com.example.mappic_v3.data.model.auth.LoginRequest
+import com.example.mappic_v3.data.model.auth.RegisterRequest
 import com.example.mappic_v3.data.remote.ApiClient
 
 class AuthRepository {
@@ -9,7 +11,7 @@ class AuthRepository {
         email: String,
         password: String
     ): AuthResponse {
-        return ApiClient.apiService.login(
+        return ApiClient.authApi.login(
             LoginRequest(email, password)
         )
     }
@@ -20,7 +22,7 @@ class AuthRepository {
         password: String,
         profilePictureUrl: String? = null
     ): AuthResponse {
-        return ApiClient.apiService.register(
+        return ApiClient.authApi.register(
             RegisterRequest(name, email, password)
         )
     }

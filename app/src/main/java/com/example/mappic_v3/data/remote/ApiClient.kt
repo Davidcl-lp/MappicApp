@@ -1,33 +1,34 @@
 package com.example.mappic_v3.data.remote
 
-import com.example.mappic_v3.ui.auth.AuthApiService
+import com.example.mappic_v3.data.remote.api.*
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
 
 object ApiClient {
-
+    private const val BASE_URL = "http://10.0.2.2:3000/"
     private val json = Json {
         ignoreUnknownKeys = true
     }
-
-    val apiService: ApiService by lazy {
+    private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:3000/")
+            .baseUrl(BASE_URL)
             .addConverterFactory(
                 json.asConverterFactory("application/json".toMediaType())
             )
             .build()
-            .create(ApiService::class.java)
     }
-    val authApiService: AuthApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:3000/")
-            .addConverterFactory(
-                json.asConverterFactory("application/json".toMediaType())
-            )
-            .build()
-            .create(AuthApiService::class.java)
+    val authApi: AuthApi by lazy {
+        retrofit.create(AuthApi::class.java)
+    }
+    val albumApi: AlbumApi by lazy {
+        retrofit.create(AlbumApi::class.java)
+    }
+    val photoApi: PhotoApi by lazy {
+        retrofit.create(PhotoApi::class.java)
+    }
+    val albumMemberApi: AlbumMemberApi by lazy {
+        retrofit.create(AlbumMemberApi::class.java)
     }
 }

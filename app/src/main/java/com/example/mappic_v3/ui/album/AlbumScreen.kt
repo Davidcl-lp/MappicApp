@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.example.mappic_v3.data.model.Album
+import com.example.mappic_v3.data.model.album.Album
 import com.example.mappic_v3.ui.components.SortBar
 
 @OptIn(ExperimentalMaterial3Api::class)

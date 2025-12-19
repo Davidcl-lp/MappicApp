@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CreateAlbumScreen(
     modifier: Modifier = Modifier,
-    viewModel: AlbumViewModel = AlbumViewModel(),
+    viewModel: AlbumViewModel,
     onFinishCreate: () -> Unit
 ) {
     var title by remember { mutableStateOf("") }

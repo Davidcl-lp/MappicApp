@@ -14,13 +14,14 @@ import com.example.mappic_v3.ui.auth.*
 import com.example.mappic_v3.ui.components.TopBar
 import com.example.mappic_v3.ui.photo.AlbumPhotosScreen
 import kotlinx.coroutines.launch
+import com.example.mappic_v3.data.repository.*
 
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
 @Composable
 fun MainScreen(
-    viewModelAlbum: AlbumViewModel = AlbumViewModel()
 ) {
+
     var currentScreen by remember { mutableStateOf(ScreenState.LOGIN) }
     var selectedAlbumId by remember { mutableStateOf<Int?>(null) }
     var selectedAlbumTitle by remember { mutableStateOf<String?>(null) }
@@ -30,6 +31,7 @@ fun MainScreen(
     var currentUserId by remember { mutableStateOf<Int?>(null) }
     var currentUserRole by remember { mutableStateOf("viewer") }
     var selectedAlbumOwnerId by remember { mutableStateOf<Int?>(null) }
+    val viewModelAlbum = AlbumViewModel(albumRepository = AlbumRepository(), userRepository = UserRepository(), albumMemberRepository = AlbumMemberRepository(), currentUserId = currentUserId)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -52,7 +54,7 @@ fun MainScreen(
                 viewModel = authViewModel,
                 onLoginSuccess = { userId ->
                     currentUserId = userId
-                    viewModelAlbum.loadAlbumsForUser(userId)
+                    viewModelAlbum.loadAlbumsForUser()
                     currentScreen = ScreenState.LIST_ALBUMS
                 },
                 onRegisterClick = { currentScreen = ScreenState.REGISTER }
@@ -62,7 +64,7 @@ fun MainScreen(
                 viewModel = authViewModel,
                 onRegisterSuccess = { userId ->
                     currentUserId = userId
-                    viewModelAlbum.loadAlbumsForUser(userId)
+                    viewModelAlbum.loadAlbumsForUser()
                     currentScreen = ScreenState.LIST_ALBUMS
                 },
                 onBackToLogin = { currentScreen = ScreenState.LOGIN }

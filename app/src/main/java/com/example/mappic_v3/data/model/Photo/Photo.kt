@@ -1,4 +1,4 @@
-package com.example.mappic_v3.data.model
+package com.example.mappic_v3.data.model.Photo
 
 import kotlinx.serialization.Serializable
 
