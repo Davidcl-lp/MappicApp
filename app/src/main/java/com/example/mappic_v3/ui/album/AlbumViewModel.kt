@@ -22,7 +22,7 @@ class AlbumViewModel(
     private val albumMemberRepository: AlbumMemberRepository
 ) : ViewModel() {
 
-    private var currentUserId: Int? = null
+    var currentUserId: Int? = null
 
 
 
@@ -111,32 +111,29 @@ class AlbumViewModel(
         }
     }
 
-    fun createAlbum(
-        title: String,
-        description: String?,
-        location: String?,
-        lat: String?,
-        lon: String?,
-        isGlobal: Boolean
-    ) {
-        val ownerId = currentUserId ?: run {
-            println("ERROR: No hay usuario logueado para crear el álbum.")
-            return
-        }
+    fun createAlbum(title: String, description: String?, location: String?, lat: String?, lon: String?, isGlobal: Boolean) {
+        val ownerId = currentUserId ?: return
 
         viewModelScope.launch {
-            albumRepository.createAlbum(
-                CreateAlbumRequest(
+            try {
+                val request = CreateAlbumRequest(
                     title = title,
                     description = description,
                     owner_id = ownerId,
-                    location_name = location,
-                    latitude = lat,
-                    longitude = lon,
+                    location_name = location?.takeIf { it.isNotBlank() },
+                    latitude = lat?.takeIf { it.isNotBlank() },
+                    longitude = lon?.takeIf { it.isNotBlank() },
                     is_global = isGlobal
                 )
-            )
-            reload()
+
+                val response = repo.createAlbum(request)
+
+                if (response != null) {
+                    reload()
+                }
+            } catch (e: Exception) {
+                println("ERROR AL CREAR: ${e.message}")
+            }
         }
     }
 

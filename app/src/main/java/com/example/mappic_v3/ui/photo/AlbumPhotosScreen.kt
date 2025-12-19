@@ -71,24 +71,22 @@ fun AlbumPhotosScreen(
     val role = effectiveRole.lowercase().trim()
 
     val canUpload = remember(members, userRole, uploaderId, albumOwnerId) {
+        // 1. ¿Es el creador original del álbum?
         val isCreator = uploaderId != 0 && uploaderId == albumOwnerId
 
-        // Limpiamos los strings para evitar errores por espacios o mayúsculas
-        val navRole = userRole.lowercase().trim()
+        // 2. ¿Qué rol tiene en la lista de miembros de la DB?
+        val memberRecord = members.find { it.id == uploaderId }
+        val roleInList = memberRecord?.role?.lowercase()?.trim()
 
-        // Buscamos al usuario en la lista de miembros que llega de la DB
-        val memberInList = members.find { it.id == uploaderId }
-        val roleInList = memberInList?.role?.lowercase()?.trim() ?: ""
+        // 3. ¿Qué rol traemos de la navegación?
+        val roleFromNav = userRole.lowercase().trim()
 
-        println("DEBUG: Rol Navegación: '$navRole'")
-        println("DEBUG: Rol en Lista DB: '$roleInList'")
-        println("DEBUG: ¿Es Creador?: $isCreator")
+        // LÓGICA FINAL:
+        // Puede subir si es el creador OR tiene rol de poder en la lista OR tiene rol de poder por navegación
+        val hasPowerRole = roleInList == "owner" || roleInList == "editor" ||
+                roleFromNav == "owner" || roleFromNav == "editor"
 
-        // Si es el creador, o si el rol de navegación es de poder,
-        // o si el rol en la lista de la base de datos es de poder:
-        isCreator ||
-                navRole == "owner" || navRole == "editor" ||
-                roleInList == "owner" || roleInList == "editor"
+        isCreator || hasPowerRole
     }
 
 

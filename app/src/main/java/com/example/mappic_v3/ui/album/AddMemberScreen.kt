@@ -29,7 +29,9 @@ fun AddMemberScreen(
     var emailInput by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
 
-    // Cargar miembros al iniciar la pantalla
+    // IMPORTANTE: Asegúrate de que en AlbumViewModel esta variable NO sea private
+    val myUserId = viewModel.currentUserId
+
     LaunchedEffect(albumId) {
         viewModel.loadMembers(albumId)
     }
@@ -58,7 +60,6 @@ fun AddMemberScreen(
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // BLOQUE DE BÚSQUEDA
             SearchBlock(
                 emailInput = emailInput,
                 onEmailChange = { emailInput = it },
@@ -98,7 +99,6 @@ fun AddMemberScreen(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // LISTA DE MIEMBROS ACTUALES CON BOTÓN DE ELIMINAR
             Text(
                 text = "Miembros con acceso",
                 style = MaterialTheme.typography.titleLarge,
@@ -119,24 +119,30 @@ fun AddMemberScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(currentMembers) { member ->
+                        // Lógica de permisos para ver el botón eliminar
+                        val myMemberRecord = currentMembers.find { it.id == myUserId }
+                        val myRole = myMemberRecord?.role?.lowercase() ?: "viewer"
+                        val canDelete = myRole == "owner" || myRole == "editor"
+
                         ListItem(
                             headlineContent = { Text(member.name) },
-                            supportingContent = { Text(member.email) },
+                            supportingContent = {
+                                Text("${member.email} • ${member.role?.uppercase() ?: "MEMBER"}")
+                            },
                             leadingContent = { Icon(Icons.Default.Person, contentDescription = null) },
                             trailingContent = {
-                                IconButton(onClick = {
-                                    viewModel.deleteMember(albumId, member.id)
-                                }) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Eliminar",
-                                        tint = Color.Red.copy(alpha = 0.7f)
-                                    )
+                                if (canDelete) {
+                                    IconButton(onClick = {
+                                        viewModel.deleteMember(albumId, member.id)
+                                    }) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "Eliminar",
+                                            tint = Color.Red.copy(alpha = 0.7f)
+                                        )
+                                    }
                                 }
-                            },
-                            colors = ListItemDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                            )
+                            }
                         )
                     }
                 }
@@ -145,6 +151,7 @@ fun AddMemberScreen(
     }
 }
 
+// ESTAS FUNCIONES DEBEN ESTAR FUERA DE LA FUNCIÓN PRINCIPAL
 @Composable
 fun SearchBlock(emailInput: String, onEmailChange: (String) -> Unit, onSearch: () -> Unit) {
     OutlinedTextField(
