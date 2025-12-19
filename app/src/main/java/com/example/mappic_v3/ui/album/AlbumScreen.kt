@@ -175,10 +175,14 @@ fun AlbumCard(
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    text = album.location_name ?: "Sin ubicación",
+                    text = if (album.location_name.isNullOrBlank())
+                        "Sin ubicación"
+                    else
+                        album.location_name,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
             }
 
             if (isPressed) {
