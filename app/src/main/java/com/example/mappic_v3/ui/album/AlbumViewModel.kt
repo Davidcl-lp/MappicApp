@@ -42,32 +42,21 @@ class AlbumViewModel : ViewModel() {
     fun addMember(albumId: Int, userId: Int, role: String) {
         viewModelScope.launch {
             _memberMessage.value = null
-
             try {
-                val user = repo.addMemberToAlbum(
-                    AddMemberRequest(
-                        albumId = albumId,
-                        userId = userId,
-                        role = role
-                    )
-                )
+                val user = repo.addMemberToAlbum(AddMemberRequest(albumId, userId, role))
 
                 if (user != null) {
-                    _currentMembers.value = _currentMembers.value + user
-                    _memberMessage.value = "Miembro añadido correctamente"
-                } else {
-                    _memberMessage.value = "No se pudo añadir al miembro"
+                    // Forzamos que el objeto tenga el rol que acabamos de asignar
+                    // Si tu clase User no tiene campo role, asegúrate de que el
+                    // objeto Member que maneja la UI sí lo tenga.
+                    loadMembers(albumId) // La forma más segura es recargar la lista oficial
+                    _memberMessage.value = "Miembro añadido como $role"
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
                 _memberMessage.value = "Error de conexión"
             }
         }
     }
-
-
-
-
 
     fun searchUserByEmail(email: String) {
         _foundUser.value = null

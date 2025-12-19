@@ -69,7 +69,7 @@ interface ApiService {
     @GET("api/user/email/{email}")
     suspend fun searchUserByEmail(@Path("email") email: String): User?
 
-    @GET("api/album/{id}/members")
+    @GET("api/album/member/{id}")
     suspend fun getAlbumMembers(@Path("id") albumId: Int): List<User>
 
     @GET("api/user/albums/member/{id}")
