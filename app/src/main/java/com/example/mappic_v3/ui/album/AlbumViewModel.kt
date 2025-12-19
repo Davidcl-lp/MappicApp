@@ -19,9 +19,12 @@ import kotlinx.coroutines.launch
 class AlbumViewModel(
     private val albumRepository: AlbumRepository,
     private val userRepository: UserRepository,
-    private val albumMemberRepository: AlbumMemberRepository,
-    private val currentUserId: Int?
+    private val albumMemberRepository: AlbumMemberRepository
 ) : ViewModel() {
+
+    private var currentUserId: Int? = null
+
+
 
     private val repo = AlbumRepository()
     private val userRepo = UserRepository()
@@ -29,7 +32,6 @@ class AlbumViewModel(
     private val _albums = MutableStateFlow<List<Album>>(emptyList())
     val albums: StateFlow<List<Album>> = _albums
 
-    private var currentUserId: Int? = null
 
     private val _editingAlbum = MutableStateFlow<Album?>(null)
     val editingAlbum: StateFlow<Album?> = _editingAlbum
@@ -48,9 +50,8 @@ class AlbumViewModel(
     fun addMember(albumId: Int, userId: Int, role: String) {
         viewModelScope.launch {
             _memberMessage.value = null
-
             try {
-                val user = repo.addMemberToAlbum(
+                val user = albumMemberRepository.addMemberToAlbum(
                     AddMemberRequest(
                         albumId = albumId,
                         userId = userId,
@@ -65,11 +66,11 @@ class AlbumViewModel(
                     _memberMessage.value = "No se pudo añadir al miembro"
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
                 _memberMessage.value = "Error de conexión"
             }
         }
     }
+
 
     fun searchUserByEmail(email: String) {
         _foundUser.value = null

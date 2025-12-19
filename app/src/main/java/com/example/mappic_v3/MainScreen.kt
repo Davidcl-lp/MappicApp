@@ -15,6 +15,7 @@ import com.example.mappic_v3.ui.components.TopBar
 import com.example.mappic_v3.ui.photo.AlbumPhotosScreen
 import kotlinx.coroutines.launch
 import com.example.mappic_v3.data.repository.*
+import com.example.mappic_v3.ui.photo.PhotoViewModel
 
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
@@ -28,10 +29,23 @@ fun MainScreen(
     var selectedAlbumDescription by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val authViewModel = remember { AuthViewModel(context) }
-    var currentUserId by remember { mutableStateOf<Int?>(null) }
     var currentUserRole by remember { mutableStateOf("viewer") }
     var selectedAlbumOwnerId by remember { mutableStateOf<Int?>(null) }
-    val viewModelAlbum = AlbumViewModel(albumRepository = AlbumRepository(), userRepository = UserRepository(), albumMemberRepository = AlbumMemberRepository(), currentUserId = currentUserId)
+    var currentUserId by remember { mutableStateOf<Int?>(null) }
+
+    val viewModelAlbum = remember {
+        AlbumViewModel(
+            albumRepository = AlbumRepository(),
+            userRepository = UserRepository(),
+            albumMemberRepository = AlbumMemberRepository()
+        )
+    }
+    val photoViewModel = remember {
+        PhotoViewModel(PhotoRepository())
+    }
+
+
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -49,12 +63,14 @@ fun MainScreen(
             .padding(padding)
             .fillMaxSize()
 
+        val userToken = authViewModel.token ?: ""
+
         when (currentScreen) {
             ScreenState.LOGIN -> LoginScreen(
                 viewModel = authViewModel,
                 onLoginSuccess = { userId ->
                     currentUserId = userId
-                    viewModelAlbum.loadAlbumsForUser()
+                    viewModelAlbum.loadAlbumsForUser(userId)
                     currentScreen = ScreenState.LIST_ALBUMS
                 },
                 onRegisterClick = { currentScreen = ScreenState.REGISTER }
@@ -64,7 +80,7 @@ fun MainScreen(
                 viewModel = authViewModel,
                 onRegisterSuccess = { userId ->
                     currentUserId = userId
-                    viewModelAlbum.loadAlbumsForUser()
+                    viewModelAlbum.loadAlbumsForUser(userId)
                     currentScreen = ScreenState.LIST_ALBUMS
                 },
                 onBackToLogin = { currentScreen = ScreenState.LOGIN }
@@ -89,14 +105,18 @@ fun MainScreen(
 
             ScreenState.PHOTOS -> AlbumPhotosScreen(
                 userRole = currentUserRole,
-                modifier = modifier,
                 albumId = selectedAlbumId ?: 0,
                 albumTitle = selectedAlbumTitle ?: "",
                 albumDescription = selectedAlbumDescription ?: "",
                 uploaderId = currentUserId ?: 0,
                 albumOwnerId = selectedAlbumOwnerId ?: 0,
+                albumViewModel = viewModelAlbum,
+                photoViewModel = photoViewModel,
+                modifier = modifier,
                 onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
+
+
 
             ScreenState.CREATE_ALBUM -> CreateAlbumScreen(
                 modifier = modifier,
@@ -116,17 +136,19 @@ fun MainScreen(
                 onLogout = { currentScreen = ScreenState.LOGIN }
             )
             ScreenState.MEMBER_ADD -> {
-                val albumId = selectedAlbumId // Usamos el ID guardado
+                val albumId = selectedAlbumId
                 if (albumId != null) {
                     AddMemberScreen(
                         albumId = albumId,
                         viewModel = viewModelAlbum,
-                        onBack = { currentScreen = ScreenState.LIST_ALBUMS } // Volver
+                        userToken = userToken,
+                        onBack = { currentScreen = ScreenState.LIST_ALBUMS }
                     )
                 } else {
                     currentScreen = ScreenState.LIST_ALBUMS
                 }
             }
+
         }
     }
 }

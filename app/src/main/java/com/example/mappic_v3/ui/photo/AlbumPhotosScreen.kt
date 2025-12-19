@@ -27,7 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.mappic_v3.data.model.Photo.Photo
-import com.example.mappic_v3.ui.album.AlbumViewModel // Importante para cargar miembros
+import com.example.mappic_v3.data.repository.AlbumRepository
+import com.example.mappic_v3.data.repository.UserRepository
+import com.example.mappic_v3.ui.album.AlbumViewModel
+import com.example.mappic_v3.ui.auth.AuthViewModel
+
 
 @Composable
 fun AlbumPhotosScreen(
@@ -37,14 +41,16 @@ fun AlbumPhotosScreen(
     albumDescription: String,
     uploaderId: Int,
     albumOwnerId: Int,
+    albumViewModel: AlbumViewModel,
+    photoViewModel: PhotoViewModel,
     modifier: Modifier,
     onBack: () -> Unit
-) {
+)
+
+{
     BackHandler { onBack() }
     val context = LocalContext.current
-    val viewModel = remember { PhotoViewModel(albumId) }
 
-    val albumViewModel = remember { AlbumViewModel() }
     val members by albumViewModel.currentMembers.collectAsState()
 
     LaunchedEffect(albumId) {
@@ -60,34 +66,35 @@ fun AlbumPhotosScreen(
     }
     // -----------------------------------------------
 
-    val photos by viewModel.photos.collectAsState()
     var selectionMode by remember { mutableStateOf(false) }
     var selectedPhotos by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var viewerOpen by remember { mutableStateOf(false) }
     var startIndex by remember { mutableStateOf(0) }
     val isOwner = uploaderId == albumOwnerId
-    val isUploading by viewModel.isUploading.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
 
-    // Usamos el rol "efectivo" (el de la lista de miembros)
+    val photos by photoViewModel.photos.collectAsState(emptyList())
+    val isUploading by photoViewModel.isUploading.collectAsState()
+    val errorMessage by photoViewModel.errorMessage.collectAsState()
+
+
     val role = effectiveRole.lowercase().trim()
 
     val canUpload = remember(members, userRole, uploaderId, albumOwnerId) {
-        // 1. ¿Es el dueño por ID? (Verificación primaria)
-        val isOwnerById = (uploaderId != 0 && uploaderId == albumOwnerId)
+        if (members.isEmpty()) {
+            val navRole = userRole.lowercase()
+            return@remember navRole == "owner" || navRole == "editor"
+        }
 
-        // 2. ¿Tiene rol de owner o editor en la navegación?
-        val roleNav = userRole.lowercase().trim()
-        val hasPowerRoleNav = roleNav == "owner" || roleNav == "editor"
+        val isOwner = uploaderId == albumOwnerId
 
-        // 3. ¿Tiene rol de editor en la lista de miembros actualizada?
-        val member = members.find { it.id == uploaderId }
-        val roleInList = member?.role?.lowercase()?.trim() ?: ""
-        val hasPowerRoleList = roleInList == "editor" || roleInList == "owner"
+        val memberRole = members
+            .find { it.id == uploaderId }
+            ?.role
+            ?.lowercase()
 
-        // Resultado final: Si cualquiera es true, puede subir
-        isOwnerById || hasPowerRoleNav || hasPowerRoleList
+        isOwner || memberRole == "editor" || memberRole == "owner"
     }
+
 
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -109,7 +116,13 @@ fun AlbumPhotosScreen(
                     )
                 } catch (e: Exception) {}
             }
-            viewModel.uploadPhotos(context, uris, uploaderId, null)
+            photoViewModel.uploadPhotos(
+                context = context,
+                uris = uris,
+                albumId = albumId,
+                uploaderId = uploaderId,
+                description = null
+            )
         }
     }
 
@@ -168,7 +181,7 @@ fun AlbumPhotosScreen(
                 if (selectionMode) {
                     Button(
                         onClick = {
-                            viewModel.deletePhotos(selectedPhotos.toList())
+                            photoViewModel.deletePhotos(selectedPhotos.toList())
                             selectedPhotos = emptySet()
                             selectionMode = false
                         },

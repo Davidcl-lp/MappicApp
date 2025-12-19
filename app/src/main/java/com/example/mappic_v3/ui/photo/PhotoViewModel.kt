@@ -12,9 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Response.success
 
-class PhotoViewModel(private val albumId: Int) : ViewModel() {
-
-    private val repo = PhotoRepository()
+class PhotoViewModel(private val repo: PhotoRepository) : ViewModel() {
 
     private val _photos = MutableStateFlow<List<Photo>>(emptyList())
     val photos: StateFlow<List<Photo>> = _photos
@@ -28,11 +26,7 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
-    init {
-        loadPhotos()
-    }
-
-    fun loadPhotos() {
+    fun loadPhotos(albumId: Int) {
         viewModelScope.launch {
             _isLoading.value = true
             _photos.value = emptyList()
@@ -40,7 +34,6 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
                 val result = repo.getPhotos(albumId)
                 _photos.value = result
             } catch (e: Exception) {
-                Log.e("PhotoViewModel", "Error al cargar fotos: ${e.message}")
                 _errorMessage.value = "Error al cargar fotos"
             } finally {
                 _isLoading.value = false
@@ -48,37 +41,15 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
         }
     }
 
-
-    fun uploadPhotos(
-        context: Context,
-        uris: List<Uri>,
-        uploaderId: Int,
-        description: String?
-    ) {
-        if (uploaderId <= 0) {
-            _errorMessage.value = "ID de usuario no válido"
-            return
-        }
-
+    fun uploadPhotos(context: Context, uris: List<Uri>, albumId: Int, uploaderId: Int, description: String?) {
         viewModelScope.launch {
             _isUploading.value = true
-            _errorMessage.value = null
             try {
-                val newPhotos = repo.uploadPhotos(
-                    context,
-                    uris,
-                    albumId,
-                    uploaderId,
-                    description
-                )
-
-                if (newPhotos != null) {
-                    _photos.value = _photos.value + newPhotos
-                } else {
-                    _errorMessage.value = "Error al subir fotos"
-                }
+                val newPhotos = repo.uploadPhotos(context, uris, albumId, uploaderId, description)
+                if (newPhotos != null) _photos.value = _photos.value + newPhotos
+                else _errorMessage.value = "Error al subir fotos"
             } catch (e: Exception) {
-                _errorMessage.value = "Error de conexión"
+                _errorMessage.value = "Error al subir fotos"
             } finally {
                 _isUploading.value = false
             }
@@ -89,14 +60,11 @@ class PhotoViewModel(private val albumId: Int) : ViewModel() {
         viewModelScope.launch {
             try {
                 photoIds.forEach { repo.deletePhoto(it) }
-                loadPhotos()
-            } catch (e: Exception) {
+                } catch (e: Exception) {
                 _errorMessage.value = "Error al eliminar fotos"
             }
         }
     }
 
-    fun clearError() {
-        _errorMessage.value = null
-    }
+    fun clearError() { _errorMessage.value = null }
 }

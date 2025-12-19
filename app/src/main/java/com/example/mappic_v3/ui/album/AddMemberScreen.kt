@@ -20,6 +20,7 @@ import com.example.mappic_v3.data.model.auth.User
 fun AddMemberScreen(
     albumId: Int,
     viewModel: AlbumViewModel,
+    userToken: String,
     onBack: () -> Unit
 ) {
     val foundUser by viewModel.foundUser.collectAsState()
@@ -79,7 +80,6 @@ fun AddMemberScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // BLOQUE DE USUARIO ENCONTRADO
             foundUser?.let { user ->
                 UserActionsBlock(
                     user = user,
