@@ -1,6 +1,9 @@
 package com.example.mappic_v3.ui.auth
 
 import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import retrofit2.HttpException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,6 +30,9 @@ class AuthViewModel(private val context: Context) : ViewModel() {
 
     private val _userId = MutableStateFlow<Int?>(null)
     val userId: StateFlow<Int?> get() = _userId
+
+    var email by mutableStateOf<String?>(null)
+        private set
     fun clearError() {
         _errorMessage.value = null
     }

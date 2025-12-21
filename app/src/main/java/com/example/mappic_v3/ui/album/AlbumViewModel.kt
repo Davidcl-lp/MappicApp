@@ -1,5 +1,6 @@
 package com.example.mappic_v3.ui.album
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mappic_v3.data.model.Member.AddMemberRequest
@@ -58,9 +59,11 @@ class AlbumViewModel(
                         role = role
                     )
                 )
+                Log.d("DEBUG_ALBUM", "Enviando a API -> ID: $userId, Rol: $role")
 
                 if (user != null) {
                     _currentMembers.value = _currentMembers.value + user
+                    loadMembers(albumId)
                     _memberMessage.value = "Miembro añadido correctamente"
                 } else {
                     _memberMessage.value = "No se pudo añadir al miembro"

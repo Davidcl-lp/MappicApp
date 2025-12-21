@@ -1,21 +1,33 @@
 package com.example.mappic_v3.ui
 
+import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
+import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresExtension
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.mappic_v3.ui.album.*
 import com.example.mappic_v3.ui.auth.*
 import com.example.mappic_v3.ui.components.TopBar
 import com.example.mappic_v3.ui.photo.AlbumPhotosScreen
-import kotlinx.coroutines.launch
 import com.example.mappic_v3.data.repository.*
 import com.example.mappic_v3.ui.photo.PhotoViewModel
+
 
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
@@ -127,7 +139,15 @@ fun MainScreen(
             ScreenState.CREATE_ALBUM -> CreateAlbumScreen(
                 modifier = modifier,
                 viewModel = viewModelAlbum,
-                onFinishCreate = { currentScreen = ScreenState.LIST_ALBUMS },
+                onFinishCreate = {
+                    // 1. Buscamos el ID del usuario actual
+                    val userId = currentUserId
+                    if (userId != null) {
+                        // 2. FORZAMOS la recarga de la lista en el ViewModel
+                        viewModelAlbum.loadAlbumsForUser(userId)
+                    }
+                    currentScreen = ScreenState.LIST_ALBUMS
+                },
                 onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
 
@@ -166,54 +186,147 @@ fun ProfileScreen(
     onLogout: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    // Obtenemos el correo directamente del ViewModel
+    val userEmail = authViewModel.email ?: "usuario@ejemplo.com"
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Text("My Profile", style = MaterialTheme.typography.headlineMedium)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 30.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Espacio superior para bajar el contenido
+            Spacer(modifier = Modifier.height(100.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+            // --- IMAGEN DE PERFIL (LOGO FIJO) ---
+            Surface(
+                modifier = Modifier.size(130.dp),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                tonalElevation = 4.dp
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    androidx.compose.foundation.Image(
+                        painter = painterResource(id = com.example.mappic_v3.R.drawable.ic_mappic),
+                        contentDescription = "MapPic Logo",
+                        modifier = Modifier.size(90.dp)
+                    )
+                }
+            }
 
-        Button(onClick = { showDialog = true }) {
-            Text("Delete Account")
-        }
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Mi Perfil",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
+                ),
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
-        Button(onClick = {
-            authViewModel.logout()
-            onLogout()
-        }) {
-            Text("Logout")
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // --- INFO CARD (SOLO CORREO ELECTRÓNICO) ---
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Email,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "Correo Electrónico",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = userEmail,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Empuja los botones hacia el final de la pantalla
+            Spacer(modifier = Modifier.weight(1f))
+
+            // --- BOTÓN CERRAR SESIÓN ---
+            Button(
+                onClick = {
+                    authViewModel.logout()
+                    onLogout()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+            ) {
+                Icon(androidx.compose.material.icons.Icons.Default.ExitToApp, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cerrar Sesión", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // --- BOTÓN ELIMINAR CUENTA ---
+            TextButton(
+                onClick = { showDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Eliminar cuenta permanentemente",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            Spacer(modifier = Modifier.height(50.dp))
         }
     }
 
+    // DIÁLOGO DE CONFIRMACIÓN
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Confirm Delete") },
-            text = { Text("Are you sure you want to delete your account? This action cannot be undone.") },
+            title = { Text("Confirmar eliminación") },
+            text = { Text("¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.") },
             confirmButton = {
                 val coroutineScope = rememberCoroutineScope()
-                Button(onClick = {
-                    coroutineScope.launch {
-                        authViewModel.token?.let {
+
+                Button(
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    onClick = {
+                        coroutineScope.launch {
                             authViewModel.logout()
                             onLogout()
                         }
+                        showDialog = false
                     }
-                    showDialog = false
-                }) {
-                    Text("Yes")
+                ) {
+                    Text("Eliminar", color = androidx.compose.ui.graphics.Color.White)
                 }
             },
             dismissButton = {
-                Button(onClick = { showDialog = false }) {
-                    Text("No")
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Cancelar")
                 }
             }
         )

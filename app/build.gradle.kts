@@ -61,7 +61,7 @@ android {
 
 dependencies {
     // Coil para imágenes
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-compose:2.5.0")
 
     // Compose BOM estable
     implementation(platform("androidx.compose:compose-bom:2023.09.01"))

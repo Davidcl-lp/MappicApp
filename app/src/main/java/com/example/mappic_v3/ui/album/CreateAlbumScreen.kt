@@ -69,8 +69,11 @@ fun CreateAlbumScreen(
 
         Spacer(Modifier.height(24.dp))
 
+        // Dentro de CreateAlbumScreen.kt
         Button(
             onClick = {
+                // Obtenemos el ID del usuario actual desde el ViewModel o pasándolo como parámetro
+                // Si el userId no está en el AlbumViewModel, asegúrate de refrescarlo en el MainScreen
                 viewModel.createAlbum(
                     title = title.trim(),
                     description = description.ifBlank { null },
@@ -79,6 +82,7 @@ fun CreateAlbumScreen(
                     lon = "0",
                     isGlobal = false
                 )
+
                 onFinishCreate()
             },
             modifier = Modifier.fillMaxWidth(),
