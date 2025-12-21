@@ -150,7 +150,7 @@ fun AlbumPhotosScreen(
                             onClick = { imagePickerLauncher.launch("image/*") },
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
+                            Icon(Icons.Default.CloudUpload, contentDescription = null)
                             Spacer(Modifier.width(4.dp))
                             Text("Añadir Fotos")
                         }
@@ -266,17 +266,16 @@ fun AlbumPhotosScreen(
                     }
                 }
 
-                if (isUploading) {
-                    Box(
-                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color.White)
-                    }
+            }
+            if (isUploading) {
+                Box(
+                    Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color.White)
                 }
             }
         }
-
     }
         if (viewerOpen) {
             PhotoViewer(
