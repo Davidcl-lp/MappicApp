@@ -30,6 +30,7 @@ import com.example.mappic_v3.ui.photo.PhotoViewModel
 
 
 
+
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
 @Composable
 fun MainScreen(
@@ -104,9 +105,14 @@ fun MainScreen(
                 },
                 onBackToLogin = { currentScreen = ScreenState.LOGIN }
             )
-            ScreenState.LIST_ALBUMS -> AlbumScreen(
+            ScreenState.LIST_ALBUMS ->
+
+
+                AlbumScreen(
+
                 viewModel = viewModelAlbum,
                 modifier = modifier,
+
                 onEdit = { currentScreen = ScreenState.EDIT_ALBUM },
                 onOpenPhotos = { id, title, description, role, ownerId ->
                     selectedAlbumId = id
@@ -140,16 +146,11 @@ fun MainScreen(
                 modifier = modifier,
                 viewModel = viewModelAlbum,
                 onFinishCreate = {
-                    // 1. Buscamos el ID del usuario actual
-                    val userId = currentUserId
-                    if (userId != null) {
-                        // 2. FORZAMOS la recarga de la lista en el ViewModel
-                        viewModelAlbum.loadAlbumsForUser(userId)
-                    }
                     currentScreen = ScreenState.LIST_ALBUMS
                 },
                 onBack = { currentScreen = ScreenState.LIST_ALBUMS }
             )
+
 
             ScreenState.EDIT_ALBUM -> EditAlbumScreen(
                 modifier = modifier,

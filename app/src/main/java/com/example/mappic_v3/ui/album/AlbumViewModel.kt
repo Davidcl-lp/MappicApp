@@ -27,8 +27,6 @@ class AlbumViewModel(
 
 
 
-    private val repo = AlbumRepository()
-    private val userRepo = UserRepository()
 
     private val _albums = MutableStateFlow<List<Album>>(emptyList())
     val albums: StateFlow<List<Album>> = _albums
@@ -79,12 +77,18 @@ class AlbumViewModel(
         _foundUser.value = null
         _memberMessage.value = null
         viewModelScope.launch {
-            val user = userRepo.findUserByEmail(email)
-            if (user != null) {
-                _foundUser.value = user
-                _memberMessage.value = "User found: ${user.name}"
-            } else {
-                _memberMessage.value = "Error: User not found with that email."
+            try {
+                val user = userRepository.findUserByEmail(email)
+
+                if (user != null) {
+                    _foundUser.value = user
+                    _memberMessage.value = "User found: ${user.name}"
+                } else {
+                    _memberMessage.value = "Error: User not found with that email."
+                }
+            } catch (e: Exception) {
+                Log.e("AlbumViewModel", "Error searching user: ${e.message}")
+                _memberMessage.value = "Error de conexión"
             }
         }
     }
@@ -114,8 +118,21 @@ class AlbumViewModel(
         }
     }
 
-    fun createAlbum(title: String, description: String?, location: String?, lat: String?, lon: String?, isGlobal: Boolean) {
-        val ownerId = currentUserId ?: return
+    fun createAlbum(
+        title: String,
+        description: String?,
+        location: String?,
+        lat: String?,
+        lon: String?,
+        isGlobal: Boolean,
+        onComplete: () -> Unit
+    ) {
+        // Si esto falla, nunca navegará. Asegúrate de que el ID esté llegando.
+        val ownerId = currentUserId ?: run {
+            Log.e("AlbumViewModel", "ERROR: currentUserId es NULL")
+            onComplete() // Navegamos igual para salir del bucle
+            return
+        }
 
         viewModelScope.launch {
             try {
@@ -124,18 +141,28 @@ class AlbumViewModel(
                     description = description,
                     owner_id = ownerId,
                     location_name = location?.takeIf { it.isNotBlank() },
-                    latitude = lat?.takeIf { it.isNotBlank() },
-                    longitude = lon?.takeIf { it.isNotBlank() },
+                    latitude = lat,
+                    longitude = lon,
                     is_global = isGlobal
                 )
 
-                val response = repo.createAlbum(request)
+                // 1. Intentamos crear el álbum
+                albumRepository.createAlbum(request)
 
-                if (response != null) {
-                    reload()
+                // 2. Intentamos recargar en segundo plano (sin 'await' para no bloquear)
+                launch {
+                    try {
+                        val owned = albumRepository.getUserAlbums(ownerId)
+                        val shared = albumRepository.getSharedAlbums(ownerId)
+                        _albums.value = owned + shared
+                    } catch (e: Exception) {
+                        Log.e("AlbumViewModel", "Error recargando lista: ${e.message}")
+                    }
                 }
             } catch (e: Exception) {
-                println("ERROR AL CREAR: ${e.message}")
+                Log.e("AlbumViewModel", "Error al crear: ${e.message}")
+            } finally {
+                onComplete()
             }
         }
     }

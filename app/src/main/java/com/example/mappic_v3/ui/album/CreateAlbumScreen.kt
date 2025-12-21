@@ -9,47 +9,26 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun CreateAlbumScreen(
     modifier: Modifier = Modifier,
-    viewModel: AlbumViewModel,
+    viewModel: AlbumViewModel, // Recibe el de MainScreen
     onFinishCreate: () -> Unit,
     onBack: () -> Unit
 ) {
-    BackHandler { onBack() }
-
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
 
-    val isTitleValid = title.isNotBlank()
-
-    Column(
-        modifier = modifier.padding(20.dp)
-    ) {
-
-        Text(
-            text = "Crear álbum",
-            style = MaterialTheme.typography.headlineLarge
-        )
+    Column(modifier.padding(20.dp)) {
+        Text("Crear álbum", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(Modifier.height(16.dp))
+
         OutlinedTextField(
             value = title,
             onValueChange = { title = it },
             label = { Text("Título") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = title.isBlank() && title.isNotEmpty()
+            modifier = Modifier.fillMaxWidth()
         )
 
-        if (title.isBlank() && title.isNotEmpty()) {
-            Text(
-                text = "El título es obligatorio",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
@@ -57,39 +36,35 @@ fun CreateAlbumScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = location,
             onValueChange = { location = it },
             label = { Text("Ubicación") },
-            placeholder = { Text("Ej: Madrid, España") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
 
-        // Dentro de CreateAlbumScreen.kt
         Button(
             onClick = {
-                // Obtenemos el ID del usuario actual desde el ViewModel o pasándolo como parámetro
-                // Si el userId no está en el AlbumViewModel, asegúrate de refrescarlo en el MainScreen
-                viewModel.createAlbum(
-                    title = title.trim(),
-                    description = description.ifBlank { null },
-                    location = location.ifBlank { null },
-                    lat = "0",
-                    lon = "0",
-                    isGlobal = false
-                )
-
-                onFinishCreate()
+                if (title.isNotBlank()) {
+                    viewModel.createAlbum(
+                        title = title,
+                        description = description,
+                        location = location,
+                        lat = "0",
+                        lon = "0",
+                        isGlobal = false,
+                        onComplete = {
+                            onFinishCreate() // Te lleva a ScreenState.LIST_ALBUMS
+                        }
+                    )
+                }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = isTitleValid
+            enabled = title.isNotBlank()
         ) {
             Text("Guardar álbum")
         }
     }
 }
-
