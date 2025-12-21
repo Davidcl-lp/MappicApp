@@ -66,12 +66,13 @@ class AuthViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+    fun login(emailInput: String, password: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             try {
-                val response = ApiClient.authApi.login(LoginRequest(email, password))
+                val response = ApiClient.authApi.login(LoginRequest(emailInput, password))
                 token = response.token
                 _userId.value = response.user.id
+                email=emailInput
                 _isLoggedIn.value = true
                 _errorMessage.value = null
                 onResult(true, null)
