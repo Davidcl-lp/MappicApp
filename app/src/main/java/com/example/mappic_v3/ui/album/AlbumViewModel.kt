@@ -146,10 +146,8 @@ class AlbumViewModel(
                     is_global = isGlobal
                 )
 
-                // 1. Intentamos crear el álbum
                 albumRepository.createAlbum(request)
 
-                // 2. Intentamos recargar en segundo plano (sin 'await' para no bloquear)
                 launch {
                     try {
                         val owned = albumRepository.getUserAlbums(ownerId)
